@@ -479,6 +479,12 @@ header{background:rgba(4,4,10,0.97);backdrop-filter:blur(24px);border-bottom:1px
       <span id="regime-pill-text">DETECTING…</span>
     </div>
     <span class="mono" style="color:var(--t4);font-size:9px" id="clock"></span>
+    <div id="live-status" style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;min-width:70px">
+      <div style="display:flex;align-items:center;gap:4px;font-size:8px;font-weight:700;letter-spacing:.04em;color:var(--t4)">
+        <div style="width:5px;height:5px;border-radius:50%;background:var(--t4)"></div>
+        CONNECTING…
+      </div>
+    </div>
   </div>
 </div></div></header>
 
@@ -1115,6 +1121,512 @@ function gen(){
 }
 gen();
 
+// ═══════════════════════════════════════════════════════════════════
+// LIVE DATA SERVICE v1.0 — Multi-Source API Integration
+// Sources: CoinGecko (market data), Deribit (options/IV/flow),
+//          Binance WebSocket (real-time prices), Alternative.me (FNG),
+//          CryptoCompare (news)
+// Falls back to mock data on API failure — zero-downtime degradation
+// ═══════════════════════════════════════════════════════════════════
+
+const LiveData = {
+  // ─── State ─────────────────────────────────────────────────
+  status: 'connecting',
+  sources: { coingecko:false, deribit:false, binanceWs:false, fng:false },
+  lastUpdate: 0,
+  fgIndex: null,
+  ws: null,
+  wsReconnects: 0,
+  termStructureData: {},
+  liveFlows: [],
+  liveNews: [],
+
+  // ─── CoinGecko symbol → ID mapping ────────────────────────
+  cgMap: {
+    'BTC':'bitcoin','ETH':'ethereum','SOL':'solana','XRP':'ripple',
+    'BNB':'binancecoin','DOGE':'dogecoin','ADA':'cardano',
+    'AVAX':'avalanche-2','DOT':'polkadot','LINK':'chainlink',
+    'SUI':'sui','TON':'the-open-network','SHIB':'shiba-inu',
+    'PEPE':'pepe','LTC':'litecoin','ARB':'arbitrum',
+    'OP':'optimism','NEAR':'near','INJ':'injective-protocol',
+    'FIL':'filecoin','MATIC':'matic-network','TAO':'bittensor',
+    'AAVE':'aave','ATOM':'cosmos','RUNE':'thorchain',
+    'UNI':'uniswap','LDO':'lido-dao','TIA':'celestia',
+    'FET':'artificial-superintelligence-alliance','RNDR':'render-token',
+    'APT':'aptos','TRX':'tron','ICP':'internet-computer',
+    'ENA':'ethena','WIF':'dogwifcoin','HYPE':'hyperliquid',
+    'ONDO':'ondo-finance','PENDLE':'pendle',
+    'JUP':'jupiter-exchange-solana','MKR':'maker',
+    'CRV':'curve-dao-token','HBAR':'hedera-hashgraph',
+    'KAS':'kaspa','FTM':'fantom','WLD':'worldcoin-wld',
+    'TRUMP':'official-trump','VIRTUAL':'virtual-protocol',
+    'EIGEN':'eigenlayer','XLM':'stellar','GRT':'the-graph',
+    'RAY':'raydium','XMR':'monero','BCH':'bitcoin-cash',
+    'ETC':'ethereum-classic','POPCAT':'popcat',
+    'GOAT':'goatseus-maximus','FARTCOIN':'fartcoin',
+    'PAXG':'pax-gold','STX':'blockstack','IMX':'immutable-x',
+    'BONK':'bonk','PENGU':'pudgy-penguins',
+    'MORPHO':'morpho','ZK':'zksync','PYTH':'pyth-network',
+    'SEI':'sei-network','PTF':'powertrade-fuel'
+  },
+
+  _revMap: null,
+  get revMap() {
+    if (!this._revMap) {
+      this._revMap = {};
+      for (const [s, id] of Object.entries(this.cgMap)) this._revMap[id] = s;
+    }
+    return this._revMap;
+  },
+
+  // ─── Utility: Parse Deribit expiry string ──────────────────
+  parseExpiry(exp) {
+    const months = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+    const match = exp.match(/^(\d+)([A-Z]+)(\d+)$/);
+    if (!match) return new Date();
+    return new Date(2000 + parseInt(match[3]), months[match[2]] || 0, parseInt(match[1]), 8, 0, 0);
+  },
+
+  getDTE(exp) {
+    return Math.max(0, Math.ceil((this.parseExpiry(exp) - Date.now()) / 86400000));
+  },
+
+  // ═══ FETCH: CoinGecko Market Data ═════════════════════════
+  async fetchMarkets() {
+    try {
+      const ids = Object.values(this.cgMap).join(',');
+      const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=1h%2C24h%2C7d%2C30d`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      if (!Array.isArray(data) || data.length === 0) return false;
+      this.mergeMarketData(data);
+      this.sources.coingecko = true;
+      this.lastUpdate = Date.now();
+      console.log(`[LiveData] CoinGecko: ${data.length} assets updated`);
+      return true;
+    } catch(e) {
+      console.warn('[LiveData] CoinGecko:', e.message);
+      this.sources.coingecko = false;
+      return false;
+    }
+  },
+
+  // ═══ FETCH: Fear & Greed Index ════════════════════════════
+  async fetchFearGreed() {
+    try {
+      const r = await fetch('https://api.alternative.me/fng/?limit=1');
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      if (data.data && data.data[0]) {
+        this.fgIndex = parseInt(data.data[0].value);
+        this.sources.fng = true;
+        console.log(`[LiveData] Fear & Greed: ${this.fgIndex}`);
+        return this.fgIndex;
+      }
+      return null;
+    } catch(e) {
+      console.warn('[LiveData] FNG:', e.message);
+      this.sources.fng = false;
+      return null;
+    }
+  },
+
+  // ═══ FETCH: Deribit Options Book Summary ══════════════════
+  async fetchDeribitOptions(currency) {
+    try {
+      const r = await fetch(`https://deribit.com/api/v2/public/get_book_summary_by_currency?currency=${currency}&kind=option`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      if (data.result && data.result.length > 0) {
+        this.processOptionsData(currency, data.result);
+        this.sources.deribit = true;
+        console.log(`[LiveData] Deribit ${currency}: ${data.result.length} instruments`);
+        return true;
+      }
+      return false;
+    } catch(e) {
+      console.warn(`[LiveData] Deribit ${currency}:`, e.message);
+      return false;
+    }
+  },
+
+  // ═══ FETCH: Deribit Perpetual Funding ═════════════════════
+  async fetchDeribitFunding() {
+    try {
+      const instruments = ['BTC-PERPETUAL','ETH-PERPETUAL'];
+      const results = await Promise.allSettled(
+        instruments.map(inst =>
+          fetch(`https://deribit.com/api/v2/public/ticker?instrument_name=${inst}`)
+            .then(r => r.ok ? r.json() : null)
+        )
+      );
+      const symMap = {'BTC-PERPETUAL':'BTC','ETH-PERPETUAL':'ETH'};
+      for (const res of results) {
+        if (res.status !== 'fulfilled' || !res.value || !res.value.result) continue;
+        const tick = res.value.result;
+        const sym = symMap[tick.instrument_name];
+        if (!sym) continue;
+        const rate = tick.funding_8h || 0;
+        const d = D.find(x => x.s === sym);
+        if (d) d.fund = +rate.toFixed(6);
+      }
+    } catch(e) {
+      console.warn('[LiveData] Deribit funding:', e.message);
+    }
+  },
+
+  // ═══ FETCH: Deribit Recent Trades (Live Flow) ═════════════
+  async fetchDeribitTrades(currency) {
+    try {
+      const r = await fetch(`https://deribit.com/api/v2/public/get_last_trades_by_currency?currency=${currency}&kind=option&count=30`);
+      if (!r.ok) return;
+      const data = await r.json();
+      if (!data.result || !data.result.trades) return;
+      const trades = data.result.trades;
+      const newFlows = [];
+      for (const t of trades) {
+        const parts = t.instrument_name.split('-');
+        if (parts.length < 4) continue;
+        const asset = parts[0];
+        const expiry = parts[1];
+        const strike = parseFloat(parts[2]);
+        const type = parts[3] === 'C' ? 'CALL' : 'PUT';
+        const contracts = Math.abs(t.amount || 0);
+        const premium = Math.abs(contracts * t.price * (t.index_price || 0));
+        const age = Math.floor((Date.now() - t.timestamp) / 1000);
+        const isSweep = contracts > 5 && t.liquidity === 'T'; // taker
+        const isBlock = t.block_trade_id != null;
+        newFlows.push({
+          asset, type,
+          ot: isBlock ? 'BLOCK' : isSweep ? 'SWEEP' : t.direction === 'buy' ? 'BUY' : 'SELL',
+          isSweep: isSweep || isBlock,
+          contracts: +contracts.toFixed(1),
+          strike, premium: +premium.toFixed(0),
+          expiry, venue: 'Deribit',
+          age, timestamp: t.timestamp,
+          isLarge: premium > 50000,
+          isBull: (type === 'CALL' && t.direction === 'buy') || (type === 'PUT' && t.direction === 'sell'),
+          spreadType: null, spreadLabel: null, linkedIdx: -1, intent: null,
+          iv: t.iv ? +(t.iv * 100).toFixed(1) : null,
+          isLive: true
+        });
+      }
+      // Prepend live flows, remove old live flows
+      const keepFlows = FLOWS.filter(f => !f.isLive);
+      FLOWS.length = 0;
+      FLOWS.push(...newFlows, ...keepFlows);
+      FLOWS.sort((a, b) => a.age - b.age);
+      if (FLOWS.length > 80) FLOWS.length = 80;
+      detectComplexSpreads();
+    } catch(e) {
+      console.warn(`[LiveData] Deribit trades ${currency}:`, e.message);
+    }
+  },
+
+  // ═══ FETCH: CryptoCompare News ════════════════════════════
+  async fetchNews() {
+    try {
+      const r = await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN&sortOrder=latest');
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      if (!data.Data || !Array.isArray(data.Data)) return;
+      this.liveNews = data.Data.slice(0, 15).map(n => {
+        const tags = [];
+        if (n.categories) {
+          const cats = n.categories.toUpperCase().split('|');
+          for (const c of cats) {
+            if (c.includes('BTC') || c.includes('BITCOIN')) tags.push('BTC');
+            else if (c.includes('ETH')) tags.push('ETH');
+            else if (c.includes('SOL')) tags.push('SOL');
+            else if (c.includes('DEFI')) tags.push('DEFI');
+            else if (c.includes('REGULATION')) tags.push('MACRO');
+            else if (c.includes('EXCHANGE')) tags.push('FLOW');
+            else if (c.includes('MINING')) tags.push('BTC');
+            else if (c.includes('NFT')) tags.push('NEW');
+          }
+        }
+        if (tags.length === 0) tags.push('MACRO');
+        const ageMs = Date.now() / 1000 - n.published_on;
+        const ageStr = ageMs < 3600 ? `${Math.floor(ageMs / 60)}m` : ageMs < 86400 ? `${Math.floor(ageMs / 3600)}h` : `${Math.floor(ageMs / 86400)}d`;
+        return { t: n.title, tags: tags.slice(0, 3), time: ageStr, url: n.url, source: n.source };
+      });
+      // Update NEWS array with live data
+      if (this.liveNews.length > 0) {
+        NEWS.length = 0;
+        NEWS.push(...this.liveNews);
+        renderNews("news-dash");
+        renderNews("news-full");
+      }
+      console.log(`[LiveData] News: ${this.liveNews.length} articles`);
+    } catch(e) {
+      console.warn('[LiveData] News:', e.message);
+    }
+  },
+
+  // ═══ WEBSOCKET: Binance Real-time Prices ══════════════════
+  connectWS() {
+    if (this.ws) {
+      try { this.ws.close(); } catch(e) {}
+    }
+    try {
+      const streams = [
+        'btcusdt','ethusdt','solusdt','bnbusdt','dogeusdt','avaxusdt',
+        'linkusdt','adausdt','dotusdt','xrpusdt','arbusdt','uniusdt',
+        'ltcusdt','maticusdt','nearusdt','injusdt','aaveusdt','suiusdt',
+        'aptusdt','trxusdt','shibusdt','ltcusdt','atomusdt',
+        'filusdt','icpusdt','xlmusdt','hbarusdt','ftmusdt','etcusdt','bchusdt'
+      ].map(s => `${s}@miniTicker`).join('/');
+
+      this.ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+
+      const symMap = {
+        BTCUSDT:'BTC',ETHUSDT:'ETH',SOLUSDT:'SOL',BNBUSDT:'BNB',
+        DOGEUSDT:'DOGE',AVAXUSDT:'AVAX',LINKUSDT:'LINK',ADAUSDT:'ADA',
+        DOTUSDT:'DOT',XRPUSDT:'XRP',ARBUSDT:'ARB',UNIUSDT:'UNI',
+        LTCUSDT:'LTC',MATICUSDT:'MATIC',NEARUSDT:'NEAR',INJUSDT:'INJ',
+        AAVEUSDT:'AAVE',SUIUSDT:'SUI',APTUSDT:'APT',TRXUSDT:'TRX',
+        SHIBUSDT:'SHIB',ATOMUSDT:'ATOM',FILUSDT:'FIL',
+        ICPUSDT:'ICP',XLMUSDT:'XLM',HBARUSDT:'HBAR',
+        FTMUSDT:'FTM',ETCUSDT:'ETC',BCHUSDT:'BCH'
+      };
+
+      this.ws.onopen = () => {
+        console.log('[LiveData] Binance WS connected');
+        this.sources.binanceWs = true;
+        this.wsReconnects = 0;
+        this.updateStatus();
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          const d = msg.data;
+          if (!d || !d.s) return;
+          const sym = symMap[d.s];
+          if (!sym) return;
+          const price = parseFloat(d.c);
+          const vol24h = parseFloat(d.q);
+          if (isNaN(price) || price <= 0) return;
+
+          const rEntry = R.find(r => r.s === sym);
+          if (rEntry) rEntry.p = price;
+
+          const dEntry = D.find(x => x.s === sym);
+          if (dEntry) {
+            dEntry.p = price;
+            if (vol24h > 0) dEntry.vol = vol24h;
+          }
+        } catch(e) {}
+      };
+
+      this.ws.onclose = () => {
+        console.log('[LiveData] Binance WS closed');
+        this.sources.binanceWs = false;
+        this.updateStatus();
+        if (this.wsReconnects < 10) {
+          const delay = Math.min(30000, 2000 * Math.pow(2, this.wsReconnects));
+          this.wsReconnects++;
+          console.log(`[LiveData] WS reconnecting in ${delay/1000}s...`);
+          setTimeout(() => this.connectWS(), delay);
+        }
+      };
+
+      this.ws.onerror = () => {
+        console.warn('[LiveData] Binance WS error');
+      };
+    } catch(e) {
+      console.warn('[LiveData] WS connect failed:', e.message);
+    }
+  },
+
+  // ═══ PROCESS: Merge CoinGecko market data into D ══════════
+  mergeMarketData(cgData) {
+    const rev = this.revMap;
+    for (const coin of cgData) {
+      const sym = rev[coin.id];
+      if (!sym) continue;
+
+      const rEntry = R.find(r => r.s === sym);
+      if (rEntry) {
+        rEntry.mc = coin.market_cap || rEntry.mc;
+        rEntry.p = coin.current_price || rEntry.p;
+      }
+
+      const d = D.find(x => x.s === sym);
+      if (d) {
+        d.p = coin.current_price || d.p;
+        d.mc = coin.market_cap || d.mc;
+        if (coin.price_change_percentage_1h_in_currency != null)
+          d.ch1h = +coin.price_change_percentage_1h_in_currency.toFixed(2);
+        if (coin.price_change_percentage_24h_in_currency != null)
+          d.ch24h = +coin.price_change_percentage_24h_in_currency.toFixed(2);
+        if (coin.price_change_percentage_7d_in_currency != null)
+          d.ch7d = +coin.price_change_percentage_7d_in_currency.toFixed(2);
+        if (coin.price_change_percentage_30d_in_currency != null)
+          d.ch30d = +coin.price_change_percentage_30d_in_currency.toFixed(2);
+        if (coin.total_volume) d.vol = coin.total_volume;
+      }
+    }
+  },
+
+  // ═══ PROCESS: Extract IV, Skew, OI, Term Structure ════════
+  processOptionsData(currency, instruments) {
+    if (!instruments || !instruments.length) return;
+
+    const underlying = instruments.find(i => i.underlying_price > 0)?.underlying_price;
+    if (!underlying) return;
+
+    // Parse instrument names: CURRENCY-EXPIRY-STRIKE-TYPE
+    const parsed = instruments.filter(i => i.mark_iv > 0).map(inst => {
+      const parts = inst.instrument_name.split('-');
+      if (parts.length < 4) return null;
+      return {
+        ...inst,
+        expiry: parts[1],
+        strike: parseFloat(parts[2]),
+        type: parts[3],
+        moneyness: Math.abs(parseFloat(parts[2]) - underlying) / underlying
+      };
+    }).filter(Boolean);
+
+    if (parsed.length === 0) return;
+
+    // ATM IV: options with moneyness < 5%
+    const atm = parsed.filter(x => x.moneyness < 0.05);
+    const atmIV = atm.length > 0
+      ? atm.reduce((s, x) => s + x.mark_iv, 0) / atm.length
+      : null;
+
+    // Total OI
+    const totalOI = parsed.reduce((s, x) => s + (x.open_interest || 0), 0) * underlying;
+
+    // 25-delta Skew: OTM call IV - OTM put IV (5-15% OTM)
+    const otmPuts = parsed.filter(x => x.type === 'P' && x.moneyness > 0.05 && x.moneyness < 0.20);
+    const otmCalls = parsed.filter(x => x.type === 'C' && x.moneyness > 0.05 && x.moneyness < 0.20);
+    const avgPutIV = otmPuts.length > 0 ? otmPuts.reduce((s, x) => s + x.mark_iv, 0) / otmPuts.length : null;
+    const avgCallIV = otmCalls.length > 0 ? otmCalls.reduce((s, x) => s + x.mark_iv, 0) / otmCalls.length : null;
+    const skew = (avgCallIV != null && avgPutIV != null)
+      ? +((avgCallIV - avgPutIV)).toFixed(1) : null;
+
+    // Term Structure: group by expiry, get ATM IV at each tenor
+    const byExpiry = {};
+    for (const inst of parsed) {
+      if (!byExpiry[inst.expiry]) byExpiry[inst.expiry] = [];
+      byExpiry[inst.expiry].push(inst);
+    }
+    const termData = [];
+    for (const [exp, insts] of Object.entries(byExpiry)) {
+      const dte = this.getDTE(exp);
+      if (dte <= 0) continue;
+      const nearATM = insts.filter(x => x.moneyness < 0.10);
+      if (nearATM.length === 0) continue;
+      const iv = nearATM.reduce((s, x) => s + x.mark_iv, 0) / nearATM.length;
+      const oi = insts.reduce((s, x) => s + (x.open_interest || 0), 0);
+      termData.push({ expiry: exp, dte, iv: +iv.toFixed(1), oi });
+    }
+    termData.sort((a, b) => a.dte - b.dte);
+    this.termStructureData[currency] = termData;
+
+    // Update D entry
+    const d = D.find(x => x.s === currency);
+    if (d) {
+      if (atmIV != null) {
+        const oldIV = d.iv;
+        d.iv = +atmIV.toFixed(1);
+        // Recalculate IV-dependent fields
+        d.ivRank = Math.min(100, Math.max(0, Math.floor(((d.iv - 28) / (93 - 28)) * 100)));
+        d.ivRv = +(d.iv - d.rv30).toFixed(1);
+        d.ivChg = +(d.iv - oldIV).toFixed(1);
+      }
+      if (skew != null) d.skew25d = skew;
+      if (totalOI > 0) d.oi = totalOI;
+    }
+  },
+
+  // ═══ STATUS MANAGEMENT ════════════════════════════════════
+  updateStatus() {
+    const active = Object.values(this.sources).filter(Boolean).length;
+    const total = Object.keys(this.sources).length;
+    if (active === 0) this.status = 'offline';
+    else if (active === total) this.status = 'live';
+    else this.status = 'degraded';
+    this.renderStatus();
+  },
+
+  renderStatus() {
+    const el = document.getElementById('live-status');
+    if (!el) return;
+    const colors = {live:'var(--green)',degraded:'var(--amber)',offline:'var(--red)',connecting:'var(--t4)'};
+    const labels = {live:'LIVE DATA',degraded:'PARTIAL LIVE',offline:'OFFLINE',connecting:'CONNECTING…'};
+    const active = Object.values(this.sources).filter(Boolean).length;
+    const total = Object.keys(this.sources).length;
+    const c = colors[this.status];
+    const sourceList = Object.entries(this.sources)
+      .map(([k,v]) => `<span style="color:${v?'var(--green)':'var(--t5)'}">●</span>`)
+      .join('');
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:4px;font-size:8px;font-weight:700;letter-spacing:.04em;color:${c}">
+        <div style="width:5px;height:5px;border-radius:50%;background:${c};${this.status==='live'?'box-shadow:0 0 6px '+c+';animation:blink 2s infinite':''}"></div>
+        ${labels[this.status]}
+        <span style="color:var(--t4);font-weight:400;font-size:7px">${active}/${total}</span>
+      </div>
+      <div style="display:flex;gap:2px;font-size:7px;color:var(--t5)">
+        <span title="CoinGecko" style="color:${this.sources.coingecko?'var(--green)':'var(--t5)'}">CG</span>
+        <span title="Deribit" style="color:${this.sources.deribit?'var(--green)':'var(--t5)'}">DR</span>
+        <span title="Binance WS" style="color:${this.sources.binanceWs?'var(--green)':'var(--t5)'}">BN</span>
+        <span title="Fear&Greed" style="color:${this.sources.fng?'var(--green)':'var(--t5)'}">FG</span>
+      </div>`;
+  },
+
+  // ═══ REFRESH CYCLES ═══════════════════════════════════════
+  async refreshAll() {
+    await Promise.allSettled([
+      this.fetchMarkets(),
+      this.fetchDeribitOptions('BTC'),
+      this.fetchDeribitOptions('ETH'),
+      this.fetchDeribitFunding(),
+      this.fetchDeribitTrades('BTC'),
+      this.fetchDeribitTrades('ETH'),
+      this.fetchFearGreed(),
+      this.fetchNews()
+    ]);
+    this.updateStatus();
+    renderAll();
+  },
+
+  // ═══ START ════════════════════════════════════════════════
+  async start() {
+    console.log('[LiveData] ⚡ Initializing live data service...');
+    this.updateStatus();
+
+    // Initial fetch — all sources in parallel
+    await this.refreshAll();
+
+    // Set up staggered refresh intervals
+    setInterval(() => this.fetchMarkets().then(() => { this.updateStatus(); renderAll(); }), 60000);    // CoinGecko: 60s
+    setInterval(() => {
+      Promise.allSettled([
+        this.fetchDeribitOptions('BTC'),
+        this.fetchDeribitOptions('ETH'),
+        this.fetchDeribitFunding(),
+        this.fetchDeribitTrades('BTC'),
+        this.fetchDeribitTrades('ETH')
+      ]).then(() => { this.updateStatus(); });
+    }, 30000);  // Deribit: 30s
+    setInterval(() => this.fetchFearGreed().then(() => this.updateStatus()), 300000); // FNG: 5 min
+    setInterval(() => this.fetchNews(), 180000); // News: 3 min
+
+    // Real-time prices via WebSocket
+    this.connectWS();
+
+    // Status display refresh
+    setInterval(() => this.renderStatus(), 5000);
+
+    console.log('[LiveData] ✓ Live data service started');
+  }
+};
+
 // ─── REGIME CLASSIFIER ───────────────────────────────────────────
 function detectRegime(){
   const btc=D.find(t=>t.s==="BTC")||{};
@@ -1413,7 +1925,7 @@ function renderFlowFeed(id, filter){
           ${f.isLarge?`<span class="flow-sweep" style="background:var(--violet2);color:var(--violet);border-color:rgba(168,85,247,.2)">LARGE</span>`:''}
           ${spreadTag}
         </div>
-        <div class="flow-detail">${f.contracts} cntrcts · ${f.venue}</div>
+        <div class="flow-detail">${f.contracts} cntrcts · ${f.venue}${f.isLive?' <span style="color:var(--green);font-size:7px;font-weight:700">● LIVE</span>':''}${f.iv?' · IV '+f.iv+'%':''}</div>
         ${intentLine}${legInfo}
       </div>
       <div class="flow-right">
@@ -1515,26 +2027,59 @@ function renderTermStructure(){
   const W=rect.width,H=200;
   ctx.clearRect(0,0,W,H);
 
-  const expiries=["7D","14D","30D","60D","90D","180D"];
   const btc=D.find(t=>t.s==="BTC")||{iv:48};
   const eth=D.find(t=>t.s==="ETH")||{iv:55};
   const sol=D.find(t=>t.s==="SOL")||{iv:62};
-  // Simulate term structures based on base IV and a random-but-stable shape
-  const btcSeed=btc.seed||1;
-  const ethSeed=eth.seed||2;
-  const solSeed=sol.seed||3;
-  const btcIV=[btc.iv*.92,btc.iv*.95,btc.iv,btc.iv*1.04,btc.iv*1.06,btc.iv*1.08];
-  const ethIV=[eth.iv*1.05,eth.iv*1.02,eth.iv,eth.iv*.97,eth.iv*.96,eth.iv*.94]; // mild backwardation
-  const solIV=[sol.iv*1.1,sol.iv*1.05,sol.iv,sol.iv*.98,sol.iv*.97,sol.iv*.96];
 
+  // Use live Deribit term structure if available
+  const btcTerm = LiveData.termStructureData['BTC'];
+  const ethTerm = LiveData.termStructureData['ETH'];
+  const hasLiveTerm = btcTerm && btcTerm.length >= 3;
+
+  let expiries, btcIV, ethIV, solIV;
+  if (hasLiveTerm) {
+    // Use live term structure data from Deribit
+    const selectPoints = (termData, fallbackIV) => {
+      if (!termData || termData.length < 2) {
+        return { labels: ["7D","14D","30D","60D","90D","180D"], ivs: [fallbackIV*.92,fallbackIV*.95,fallbackIV,fallbackIV*1.04,fallbackIV*1.06,fallbackIV*1.08] };
+      }
+      // Select up to 6 representative expiries
+      const pts = termData.filter(t => t.dte > 0).slice(0, 8);
+      return {
+        labels: pts.map(p => p.dte <= 7 ? `${p.dte}D` : p.dte <= 14 ? '14D' : p.dte <= 30 ? '30D' : p.dte <= 60 ? '60D' : p.dte <= 100 ? '90D' : `${p.dte}D`),
+        ivs: pts.map(p => p.iv)
+      };
+    };
+    const btcPts = selectPoints(btcTerm, btc.iv);
+    const ethPts = selectPoints(ethTerm, eth.iv);
+    // Use max length
+    const maxLen = Math.max(btcPts.ivs.length, ethPts.ivs.length);
+    expiries = btcPts.labels.length >= ethPts.labels.length ? btcPts.labels : ethPts.labels;
+    btcIV = btcPts.ivs;
+    ethIV = ethPts.ivs;
+    // SOL doesn't have Deribit data, simulate from base IV
+    solIV = expiries.map((_, i) => sol.iv * (1.1 - i * 0.025));
+    // Pad shorter arrays
+    while (btcIV.length < expiries.length) btcIV.push(btcIV[btcIV.length-1] * 1.01);
+    while (ethIV.length < expiries.length) ethIV.push(ethIV[ethIV.length-1] * 1.01);
+    while (solIV.length < expiries.length) solIV.push(solIV[solIV.length-1] * 1.01);
+  } else {
+    // Fallback: simulated term structures
+    expiries = ["7D","14D","30D","60D","90D","180D"];
+    btcIV=[btc.iv*.92,btc.iv*.95,btc.iv,btc.iv*1.04,btc.iv*1.06,btc.iv*1.08];
+    ethIV=[eth.iv*1.05,eth.iv*1.02,eth.iv,eth.iv*.97,eth.iv*.96,eth.iv*.94];
+    solIV=[sol.iv*1.1,sol.iv*1.05,sol.iv,sol.iv*.98,sol.iv*.97,sol.iv*.96];
+  }
+
+  const numPts = expiries.length;
   const allVals=[...btcIV,...ethIV,...solIV];
   const minV=Math.min(...allVals)*0.9,maxV=Math.max(...allVals)*1.05;
   const toY=v=>H-25-(v-minV)/(maxV-minV)*(H-40);
-  const toX=i=>(i/5)*(W-50)+25;
+  const toX=i=>(i/Math.max(1,numPts-1))*(W-50)+25;
 
   // Grid
   ctx.strokeStyle="rgba(255,255,255,.04)";ctx.lineWidth=1;
-  for(let i=0;i<6;i++){
+  for(let i=0;i<numPts;i++){
     const x=toX(i);
     ctx.beginPath();ctx.moveTo(x,5);ctx.lineTo(x,H-20);ctx.stroke();
     ctx.fillStyle="rgba(160,160,192,.5)";ctx.font=`9px 'Space Mono'`;ctx.textAlign="center";
@@ -1565,7 +2110,8 @@ function renderTermStructure(){
   const ethShape=ethIV[ethIV.length-1]>ethIV[0]?"Contango":"Backwardation";
   const insightEl=document.getElementById("term-struct-insight");
   if(insightEl){
-    insightEl.innerHTML=`BTC term structure: <span style="color:${btcShape==="Contango"?"var(--green)":"var(--amber)"}">${btcShape}</span> · ETH: <span style="color:${ethShape==="Contango"?"var(--green)":"var(--amber)"}">${ethShape}</span> — ${btcShape==="Backwardation"?"Front-month IV elevated, near-term event risk priced in.":"Normal backwardation, calendar spreads attractive."}`;
+    const liveTag = hasLiveTerm ? '<span style="color:var(--green);font-size:8px;font-weight:700;margin-right:4px">● LIVE</span>' : '';
+    insightEl.innerHTML=`${liveTag}BTC term structure: <span style="color:${btcShape==="Contango"?"var(--green)":"var(--amber)"}">${btcShape}</span> · ETH: <span style="color:${ethShape==="Contango"?"var(--green)":"var(--amber)"}">${ethShape}</span> — ${btcShape==="Backwardation"?"Front-month IV elevated, near-term event risk priced in.":"Normal contango, calendar spreads attractive."}`;
   }
 }
 
@@ -2006,14 +2552,14 @@ function renderMkt(){
       <div class="c" style="color:${c.cc||'inherit'};font-size:9px">${c.c!=null?`<span class="${cCls(c.c)}">${fP(c.c)}</span> `:""}<span style="color:var(--t4)">${c.sub}</span></div>
     </div>`).join('');
 
-  // FG
-  const fgVal=Math.floor(D.reduce((s,t)=>s+t.sent,0)/D.length);
+  // FG — use live data when available
+  const fgVal = LiveData.fgIndex != null ? LiveData.fgIndex : Math.floor(D.reduce((s,t)=>s+t.sent,0)/D.length);
   document.getElementById("mkt-strip").querySelectorAll("[id=fg-strip]").forEach(el=>{el.textContent=fgVal});
 }
 
 // ─── RENDER: FEAR GREED ──────────────────────────────────────────
 function renderFG(){
-  const fgVal=Math.floor(D.reduce((s,t)=>s+t.sent,0)/D.length);
+  const fgVal = LiveData.fgIndex != null ? LiveData.fgIndex : Math.floor(D.reduce((s,t)=>s+t.sent,0)/D.length);
   const fgLabel=fgVal<20?"Extreme Fear":fgVal<40?"Fear":fgVal<60?"Neutral":fgVal<80?"Greed":"Extreme Greed";
   const fgColor=fgVal<30?"var(--red)":fgVal<45?"var(--amber)":fgVal<60?"var(--t2)":fgVal<80?"var(--green)":"var(--cyan)";
   const el=document.getElementById("fg-widget");if(!el)return;
@@ -2894,7 +3440,7 @@ function switchTab(t){
   document.getElementById("panel-"+t)?.classList.add('active');
   event.target.classList.add('active');
   if(t==="optionslab"){renderTermStructure();renderIVHeatmap("iv-heatmap-full");renderIVRV("ivrv-body-full");renderFlowFeed("flow-feed-full",flowFilter2);renderSkewMonitor();renderStrategyEngine();renderStratIdeas();renderRVArb();drawRVArbZScore();renderTVE();}
-  if(t==="positioning"){drawLiqHeatmap("liq-btc",98450,85000,115000);drawLiqHeatmap("liq-eth",3850,3200,4600);renderGEX();renderFunding("fund-body-pos");drawGammaProfile("gflip-canvas-btc","BTC","gflip-meta-btc","gflip-zone-btc");drawGammaProfile("gflip-canvas-eth","ETH","gflip-meta-eth","gflip-zone-eth");}
+  if(t==="positioning"){const _bp=(D.find(d=>d.s==="BTC")||{p:98450}).p;const _ep=(D.find(d=>d.s==="ETH")||{p:3850}).p;drawLiqHeatmap("liq-btc",_bp,_bp*0.86,_bp*1.17);drawLiqHeatmap("liq-eth",_ep,_ep*0.83,_ep*1.19);renderGEX();renderFunding("fund-body-pos");drawGammaProfile("gflip-canvas-btc","BTC","gflip-meta-btc","gflip-zone-btc");drawGammaProfile("gflip-canvas-eth","ETH","gflip-meta-eth","gflip-zone-eth");}
   if(t==="scanner"){renderTable();}
   if(t==="fairvalue"){renderFVPanel();renderProbCone();renderFVEMTable();renderFVBias();renderFVMaxPainDetail();renderFVVRP();}
 }
@@ -2915,15 +3461,29 @@ function updateClock(){document.getElementById("clock").textContent=new Date().t
 
 // ─── LIVE TICK ───────────────────────────────────────────────────
 function tick(){
-  D=D.map(t=>({...t,
-    ch1h:+((t.ch1h+(Math.random()-.5)*.25)).toFixed(2),
-    ch24h:+((t.ch24h+(Math.random()-.5)*.4*.25)).toFixed(2),
-    sent:Math.max(5,Math.min(95,t.sent+Math.floor((Math.random()-.5)*2))),
-    iv:Math.max(20,Math.min(120,+(t.iv+(Math.random()-.5)*1.5).toFixed(1))),
-    ivRank:Math.max(0,Math.min(100,t.ivRank+Math.floor((Math.random()-.5)*3))),
-    fund:+Math.max(-.08,Math.min(.08,t.fund+(Math.random()-.5)*.002)).toFixed(4),
-    skew25d:+Math.max(-15,Math.min(15,(t.skew25d+(Math.random()-.5)*.4))).toFixed(1)
-  })).map(t=>({...t,
+  const isLive = LiveData.status === 'live' || LiveData.status === 'degraded';
+  const hasCG = LiveData.sources.coingecko;
+  const hasDR = LiveData.sources.deribit;
+  const hasWS = LiveData.sources.binanceWs;
+
+  D=D.map(t=>{
+    const updates = {};
+    // Only random-walk fields that don't have live data
+    if (!hasCG && !hasWS) {
+      updates.ch1h = +((t.ch1h+(Math.random()-.5)*.25)).toFixed(2);
+      updates.ch24h = +((t.ch24h+(Math.random()-.5)*.4*.25)).toFixed(2);
+    }
+    updates.sent = Math.max(5,Math.min(95,t.sent+Math.floor((Math.random()-.5)*2)));
+    if (!hasDR) {
+      updates.iv = Math.max(20,Math.min(120,+(t.iv+(Math.random()-.5)*1.5).toFixed(1)));
+      updates.ivRank = Math.max(0,Math.min(100,t.ivRank+Math.floor((Math.random()-.5)*3)));
+      updates.skew25d = +Math.max(-15,Math.min(15,(t.skew25d+(Math.random()-.5)*.4))).toFixed(1);
+    }
+    if (!hasDR) {
+      updates.fund = +Math.max(-.08,Math.min(.08,t.fund+(Math.random()-.5)*.002)).toFixed(4);
+    }
+    return {...t, ...updates};
+  }).map(t=>({...t,
     ivRv:+(t.iv-t.rv30).toFixed(1),
     conviction:Math.min(98,Math.max(10,t.conviction+Math.floor((Math.random()-.5)*4)))
   }));
@@ -2967,11 +3527,21 @@ renderExpectedMove("em-btc","BTC");renderExpectedMove("em-eth","ETH");renderExpe
 renderMaxPain();renderPCR();
 updateClock();
 setInterval(tick,7000);setInterval(updateClock,1000);
+
+// ─── START LIVE DATA SERVICE ─────────────────────────────────────
+// Connects to CoinGecko, Deribit, Binance WS, Alternative.me, CryptoCompare
+// Falls back to mock data on failure — terminal always works
+LiveData.start().catch(e => console.warn('[LiveData] Start failed:', e.message));
 window.addEventListener("resize",()=>{renderBubbles();renderTermStructure();if(document.querySelector('#panel-fairvalue.active'))renderProbCone();if(document.querySelector('#panel-positioning.active')){drawGammaProfile("gflip-canvas-btc","BTC","gflip-meta-btc","gflip-zone-btc");drawGammaProfile("gflip-canvas-eth","ETH","gflip-meta-eth","gflip-zone-eth");}if(document.querySelector('#panel-optionslab.active'))drawRVArbZScore();});
 document.getElementById("tbl-search").addEventListener("input",renderTable);
 document.getElementById("ai-input").addEventListener("keydown",e=>{if(e.key==="Enter")runAIQuery();});
-// Draw liq maps on load
-setTimeout(()=>{drawLiqHeatmap("liq-btc",98450,85000,115000);drawLiqHeatmap("liq-eth",3850,3200,4600);},300);
+// Draw liq maps on load using current prices from D array
+setTimeout(()=>{
+  const btcP=(D.find(d=>d.s==="BTC")||{p:98450}).p;
+  const ethP=(D.find(d=>d.s==="ETH")||{p:3850}).p;
+  drawLiqHeatmap("liq-btc",btcP,btcP*0.86,btcP*1.17);
+  drawLiqHeatmap("liq-eth",ethP,ethP*0.83,ethP*1.19);
+},300);
 </script>
 </body>
 </html>
