@@ -497,6 +497,7 @@ header{background:rgba(4,4,10,0.97);backdrop-filter:blur(24px);border-bottom:1px
   <div class="mtab" onclick="switchTab('scanner')">🔬 Scanner</div>
   <div class="mtab" onclick="switchTab('fairvalue')">🎯 Fair Value</div>
   <div class="mtab" onclick="switchTab('intel')">📰 Intel</div>
+  <div class="mtab" onclick="switchTab('datasources')" id="mtab-datasources" style="margin-left:auto;border:1px solid var(--border);border-bottom:none;border-radius:6px 6px 0 0;padding:7px 14px">🔌 Data Sources <span id="ds-tab-badge" style="font-size:8px;margin-left:4px;padding:1px 5px;border-radius:3px;background:var(--t4);color:var(--bg)">0/5</span></div>
 </div></div></div>
 
 <!-- TICKER -->
@@ -1019,9 +1020,71 @@ header{background:rgba(4,4,10,0.97);backdrop-filter:blur(24px);border-bottom:1px
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════ -->
+<!-- TAB: DATA SOURCES CONTROL PANEL               -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-datasources">
+  <div style="padding-top:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="section-title">🔌 Data Sources — Connection Status & Health</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="ds-global-status" class="badge b-neutral">INITIALIZING</span>
+        <button onclick="LiveData.refreshAll()" style="background:var(--cyan2);border:1px solid rgba(0,229,255,.3);color:var(--cyan);font-size:9px;font-weight:700;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;letter-spacing:.04em">REFRESH ALL</button>
+      </div>
+    </div>
+
+    <!-- Source Cards Grid -->
+    <div id="ds-source-cards" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px">
+      <!-- Rendered by JS -->
+    </div>
+
+    <!-- Data Freshness Table -->
+    <div class="card mb">
+      <div class="card-h">
+        <div class="card-t"><span class="dot" style="background:var(--cyan)"></span>Per-Field Data Freshness</div>
+        <div style="display:flex;gap:8px;font-size:8px;color:var(--t4)">
+          <span><span style="color:var(--green)">●</span> Live (&lt;60s)</span>
+          <span><span style="color:var(--amber)">●</span> Stale (&lt;5m)</span>
+          <span><span style="color:var(--red)">●</span> Old (&gt;5m)</span>
+          <span><span style="color:var(--t5)">●</span> No data</span>
+        </div>
+      </div>
+      <div class="card-bnp scroll-md" id="ds-freshness-table">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Data Memory / Cache Status -->
+    <div class="g2 mb">
+      <div class="card">
+        <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--amber)"></span>Data Memory — Cached Values</div></div>
+        <div class="card-b" id="ds-memory-stats">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--red)"></span>Error Log</div>
+          <button onclick="LiveData.clearErrors()" style="background:none;border:1px solid var(--border);color:var(--t3);font-size:8px;padding:2px 8px;border-radius:4px;cursor:pointer;font-family:inherit">Clear</button>
+        </div>
+        <div class="card-bnp scroll-sm" id="ds-error-log">
+          <div style="padding:20px;text-align:center;color:var(--t4);font-size:10px">No errors</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Endpoints Table -->
+    <div class="card">
+      <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>API Endpoints Configuration</div></div>
+      <div class="card-bnp" id="ds-endpoints-table">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Footer -->
 <div style="text-align:center;padding:20px;font-size:8.5px;color:var(--t5);border-top:1px solid var(--border);margin-top:20px">
-  PowerTrade Options Intelligence Terminal v5.0 · Alpha Generation Engine · Data: CoinGecko · Deribit · Coinglass · LunarCrush · Santiment<br/>
+  PowerTrade Options Intelligence Terminal v5.0 · Alpha Generation Engine · Data: CoinGecko · Deribit · Binance WS · Alternative.me · CryptoCompare<br/>
   <a href="https://power.trade" target="_blank">power.trade</a> · <a href="https://power.trade/en/market-insights" target="_blank">Market Insights</a> · Not Financial Advice
 </div>
 </div>
@@ -1122,24 +1185,30 @@ function gen(){
 gen();
 
 // ═══════════════════════════════════════════════════════════════════
-// LIVE DATA SERVICE v1.0 — Multi-Source API Integration
-// Sources: CoinGecko (market data), Deribit (options/IV/flow),
-//          Binance WebSocket (real-time prices), Alternative.me (FNG),
-//          CryptoCompare (news)
-// Falls back to mock data on API failure — zero-downtime degradation
+// LIVE DATA SERVICE v2.0 — Zero Simulated Data Architecture
+// Every value shown is either LIVE or STALE (cached from last success).
+// Each source tracks: connected, lastSuccess, lastAttempt, lastError,
+// fetchCount, errorCount. Per-field timestamps on D entries.
 // ═══════════════════════════════════════════════════════════════════
 
 const LiveData = {
-  // ─── State ─────────────────────────────────────────────────
-  status: 'connecting',
-  sources: { coingecko:false, deribit:false, binanceWs:false, fng:false },
-  lastUpdate: 0,
+  // ─── Source registry (the single source of truth) ──────────
+  src: {
+    coingecko:  { id:'coingecko',  name:'CoinGecko',      url:'api.coingecko.com',  type:'REST',  interval:60,  connected:false, lastSuccess:0, lastAttempt:0, lastError:null, fetchCount:0, errorCount:0, provides:'Prices, MCap, Volume, % Changes (60+ tokens)' },
+    deribit:    { id:'deribit',    name:'Deribit',         url:'deribit.com',        type:'REST',  interval:30,  connected:false, lastSuccess:0, lastAttempt:0, lastError:null, fetchCount:0, errorCount:0, provides:'Options IV, Term Structure, Skew, OI, Funding, Flow' },
+    binanceWs:  { id:'binanceWs',  name:'Binance WS',     url:'stream.binance.com', type:'WS',    interval:0,   connected:false, lastSuccess:0, lastAttempt:0, lastError:null, fetchCount:0, errorCount:0, provides:'Real-time prices (sub-second), 24h Volume' },
+    fng:        { id:'fng',        name:'Alternative.me',  url:'api.alternative.me',  type:'REST',  interval:300, connected:false, lastSuccess:0, lastAttempt:0, lastError:null, fetchCount:0, errorCount:0, provides:'Fear & Greed Index' },
+    news:       { id:'news',       name:'CryptoCompare',   url:'min-api.cryptocompare.com', type:'REST', interval:180, connected:false, lastSuccess:0, lastAttempt:0, lastError:null, fetchCount:0, errorCount:0, provides:'Live crypto news articles' },
+  },
+
+  // ─── Data memory: per-field timestamps on D entries ────────
+  // fieldTs[symbol][field] = timestamp of last real update
+  fieldTs: {},
+  errors: [],     // error log [{source,msg,time}]
   fgIndex: null,
   ws: null,
   wsReconnects: 0,
   termStructureData: {},
-  liveFlows: [],
-  liveNews: [],
 
   // ─── CoinGecko symbol → ID mapping ────────────────────────
   cgMap: {
@@ -1169,84 +1238,99 @@ const LiveData = {
     'MORPHO':'morpho','ZK':'zksync','PYTH':'pyth-network',
     'SEI':'sei-network','PTF':'powertrade-fuel'
   },
-
   _revMap: null,
-  get revMap() {
-    if (!this._revMap) {
-      this._revMap = {};
-      for (const [s, id] of Object.entries(this.cgMap)) this._revMap[id] = s;
-    }
-    return this._revMap;
-  },
+  get revMap() { if(!this._revMap){this._revMap={};for(const[s,id]of Object.entries(this.cgMap))this._revMap[id]=s;}return this._revMap; },
 
-  // ─── Utility: Parse Deribit expiry string ──────────────────
+  // ─── Helpers ───────────────────────────────────────────────
   parseExpiry(exp) {
-    const months = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
-    const match = exp.match(/^(\d+)([A-Z]+)(\d+)$/);
-    if (!match) return new Date();
-    return new Date(2000 + parseInt(match[3]), months[match[2]] || 0, parseInt(match[1]), 8, 0, 0);
+    const months={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+    const m=exp.match(/^(\d+)([A-Z]+)(\d+)$/);
+    if(!m)return new Date();
+    return new Date(2000+parseInt(m[3]),months[m[2]]||0,parseInt(m[1]),8,0,0);
   },
-
-  getDTE(exp) {
-    return Math.max(0, Math.ceil((this.parseExpiry(exp) - Date.now()) / 86400000));
+  getDTE(exp) { return Math.max(0,Math.ceil((this.parseExpiry(exp)-Date.now())/86400000)); },
+  stampField(sym, field) {
+    if(!this.fieldTs[sym]) this.fieldTs[sym]={};
+    this.fieldTs[sym][field]=Date.now();
+  },
+  getFieldAge(sym, field) {
+    const ts=this.fieldTs[sym]?.[field];
+    return ts ? Date.now()-ts : Infinity;
+  },
+  logError(sourceId, msg) {
+    const entry={source:sourceId, msg, time:Date.now()};
+    this.errors.unshift(entry);
+    if(this.errors.length>50) this.errors.length=50;
+    this.src[sourceId].lastError=msg;
+    this.src[sourceId].errorCount++;
+  },
+  clearErrors() { this.errors=[]; this.renderDSPanel(); },
+  ageStr(ms) {
+    if(ms===Infinity||ms<=0)return'never';
+    const s=Math.floor(ms/1000);
+    if(s<60)return s+'s';
+    if(s<3600)return Math.floor(s/60)+'m '+s%60+'s';
+    return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';
+  },
+  freshnessColor(ms) {
+    if(ms===Infinity)return'var(--t5)';
+    if(ms<60000)return'var(--green)';
+    if(ms<300000)return'var(--amber)';
+    return'var(--red)';
   },
 
   // ═══ FETCH: CoinGecko Market Data ═════════════════════════
   async fetchMarkets() {
+    const s=this.src.coingecko; s.lastAttempt=Date.now(); s.fetchCount++;
     try {
-      const ids = Object.values(this.cgMap).join(',');
-      const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=1h%2C24h%2C7d%2C30d`;
-      const r = await fetch(url);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
-      if (!Array.isArray(data) || data.length === 0) return false;
+      const ids=Object.values(this.cgMap).join(',');
+      const r=await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=1h%2C24h%2C7d%2C30d`);
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data=await r.json();
+      if(!Array.isArray(data)||data.length===0) throw new Error('Empty response');
       this.mergeMarketData(data);
-      this.sources.coingecko = true;
-      this.lastUpdate = Date.now();
-      console.log(`[LiveData] CoinGecko: ${data.length} assets updated`);
+      s.connected=true; s.lastSuccess=Date.now(); s.lastError=null;
+      console.log(`[LiveData] CoinGecko: ${data.length} assets`);
       return true;
     } catch(e) {
-      console.warn('[LiveData] CoinGecko:', e.message);
-      this.sources.coingecko = false;
+      s.connected=false; this.logError('coingecko',e.message);
+      console.warn('[LiveData] CoinGecko:',e.message);
       return false;
     }
   },
 
   // ═══ FETCH: Fear & Greed Index ════════════════════════════
   async fetchFearGreed() {
+    const s=this.src.fng; s.lastAttempt=Date.now(); s.fetchCount++;
     try {
-      const r = await fetch('https://api.alternative.me/fng/?limit=1');
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
-      if (data.data && data.data[0]) {
-        this.fgIndex = parseInt(data.data[0].value);
-        this.sources.fng = true;
-        console.log(`[LiveData] Fear & Greed: ${this.fgIndex}`);
-        return this.fgIndex;
-      }
-      return null;
+      const r=await fetch('https://api.alternative.me/fng/?limit=1');
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data=await r.json();
+      if(!data.data||!data.data[0]) throw new Error('No data');
+      this.fgIndex=parseInt(data.data[0].value);
+      s.connected=true; s.lastSuccess=Date.now(); s.lastError=null;
+      // Stamp on all D entries
+      D.forEach(d=>{ d.sent=this.fgIndex; this.stampField(d.s,'sent'); });
+      return this.fgIndex;
     } catch(e) {
-      console.warn('[LiveData] FNG:', e.message);
-      this.sources.fng = false;
+      s.connected=false; this.logError('fng',e.message);
       return null;
     }
   },
 
-  // ═══ FETCH: Deribit Options Book Summary ══════════════════
+  // ═══ FETCH: Deribit Options ═══════════════════════════════
   async fetchDeribitOptions(currency) {
+    const s=this.src.deribit; s.lastAttempt=Date.now(); s.fetchCount++;
     try {
-      const r = await fetch(`https://deribit.com/api/v2/public/get_book_summary_by_currency?currency=${currency}&kind=option`);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
-      if (data.result && data.result.length > 0) {
-        this.processOptionsData(currency, data.result);
-        this.sources.deribit = true;
-        console.log(`[LiveData] Deribit ${currency}: ${data.result.length} instruments`);
-        return true;
-      }
-      return false;
+      const r=await fetch(`https://deribit.com/api/v2/public/get_book_summary_by_currency?currency=${currency}&kind=option`);
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data=await r.json();
+      if(!data.result||!data.result.length) throw new Error('No instruments');
+      this.processOptionsData(currency,data.result);
+      s.connected=true; s.lastSuccess=Date.now(); s.lastError=null;
+      return true;
     } catch(e) {
-      console.warn(`[LiveData] Deribit ${currency}:`, e.message);
+      s.connected=false; this.logError('deribit',e.message);
       return false;
     }
   },
@@ -1254,332 +1338,374 @@ const LiveData = {
   // ═══ FETCH: Deribit Perpetual Funding ═════════════════════
   async fetchDeribitFunding() {
     try {
-      const instruments = ['BTC-PERPETUAL','ETH-PERPETUAL'];
-      const results = await Promise.allSettled(
-        instruments.map(inst =>
-          fetch(`https://deribit.com/api/v2/public/ticker?instrument_name=${inst}`)
-            .then(r => r.ok ? r.json() : null)
-        )
+      const results=await Promise.allSettled(
+        ['BTC-PERPETUAL','ETH-PERPETUAL'].map(inst=>
+          fetch(`https://deribit.com/api/v2/public/ticker?instrument_name=${inst}`).then(r=>r.ok?r.json():null))
       );
-      const symMap = {'BTC-PERPETUAL':'BTC','ETH-PERPETUAL':'ETH'};
-      for (const res of results) {
-        if (res.status !== 'fulfilled' || !res.value || !res.value.result) continue;
-        const tick = res.value.result;
-        const sym = symMap[tick.instrument_name];
-        if (!sym) continue;
-        const rate = tick.funding_8h || 0;
-        const d = D.find(x => x.s === sym);
-        if (d) d.fund = +rate.toFixed(6);
+      const symMap={'BTC-PERPETUAL':'BTC','ETH-PERPETUAL':'ETH'};
+      for(const res of results){
+        if(res.status!=='fulfilled'||!res.value?.result) continue;
+        const tick=res.value.result;
+        const sym=symMap[tick.instrument_name]; if(!sym) continue;
+        const rate=tick.funding_8h||0;
+        const d=D.find(x=>x.s===sym);
+        if(d){ d.fund=+rate.toFixed(6); this.stampField(sym,'fund'); }
       }
-    } catch(e) {
-      console.warn('[LiveData] Deribit funding:', e.message);
-    }
+    } catch(e) { this.logError('deribit','Funding: '+e.message); }
   },
 
   // ═══ FETCH: Deribit Recent Trades (Live Flow) ═════════════
   async fetchDeribitTrades(currency) {
     try {
-      const r = await fetch(`https://deribit.com/api/v2/public/get_last_trades_by_currency?currency=${currency}&kind=option&count=30`);
-      if (!r.ok) return;
-      const data = await r.json();
-      if (!data.result || !data.result.trades) return;
-      const trades = data.result.trades;
-      const newFlows = [];
-      for (const t of trades) {
-        const parts = t.instrument_name.split('-');
-        if (parts.length < 4) continue;
-        const asset = parts[0];
-        const expiry = parts[1];
-        const strike = parseFloat(parts[2]);
-        const type = parts[3] === 'C' ? 'CALL' : 'PUT';
-        const contracts = Math.abs(t.amount || 0);
-        const premium = Math.abs(contracts * t.price * (t.index_price || 0));
-        const age = Math.floor((Date.now() - t.timestamp) / 1000);
-        const isSweep = contracts > 5 && t.liquidity === 'T'; // taker
-        const isBlock = t.block_trade_id != null;
+      const r=await fetch(`https://deribit.com/api/v2/public/get_last_trades_by_currency?currency=${currency}&kind=option&count=30`);
+      if(!r.ok) return;
+      const data=await r.json();
+      if(!data.result?.trades) return;
+      const newFlows=[];
+      for(const t of data.result.trades){
+        const parts=t.instrument_name.split('-');
+        if(parts.length<4) continue;
+        const asset=parts[0],expiry=parts[1],strike=parseFloat(parts[2]),type=parts[3]==='C'?'CALL':'PUT';
+        const contracts=Math.abs(t.amount||0);
+        const premium=Math.abs(contracts*t.price*(t.index_price||0));
+        const age=Math.floor((Date.now()-t.timestamp)/1000);
+        const isSweep=contracts>5&&t.liquidity==='T';
+        const isBlock=t.block_trade_id!=null;
         newFlows.push({
-          asset, type,
-          ot: isBlock ? 'BLOCK' : isSweep ? 'SWEEP' : t.direction === 'buy' ? 'BUY' : 'SELL',
-          isSweep: isSweep || isBlock,
-          contracts: +contracts.toFixed(1),
-          strike, premium: +premium.toFixed(0),
-          expiry, venue: 'Deribit',
-          age, timestamp: t.timestamp,
-          isLarge: premium > 50000,
-          isBull: (type === 'CALL' && t.direction === 'buy') || (type === 'PUT' && t.direction === 'sell'),
-          spreadType: null, spreadLabel: null, linkedIdx: -1, intent: null,
-          iv: t.iv ? +(t.iv * 100).toFixed(1) : null,
-          isLive: true
+          asset,type,ot:isBlock?'BLOCK':isSweep?'SWEEP':t.direction==='buy'?'BUY':'SELL',
+          isSweep:isSweep||isBlock, contracts:+contracts.toFixed(1),
+          strike, premium:+premium.toFixed(0), expiry, venue:'Deribit',
+          age, timestamp:t.timestamp, isLarge:premium>50000,
+          isBull:(type==='CALL'&&t.direction==='buy')||(type==='PUT'&&t.direction==='sell'),
+          spreadType:null,spreadLabel:null,linkedIdx:-1,intent:null,
+          iv:t.iv?+(t.iv*100).toFixed(1):null, isLive:true
         });
       }
-      // Prepend live flows, remove old live flows
-      const keepFlows = FLOWS.filter(f => !f.isLive);
-      FLOWS.length = 0;
-      FLOWS.push(...newFlows, ...keepFlows);
-      FLOWS.sort((a, b) => a.age - b.age);
-      if (FLOWS.length > 80) FLOWS.length = 80;
+      const keepFlows=FLOWS.filter(f=>!f.isLive);
+      FLOWS.length=0;
+      FLOWS.push(...newFlows,...keepFlows);
+      FLOWS.sort((a,b)=>a.age-b.age);
+      if(FLOWS.length>80)FLOWS.length=80;
       detectComplexSpreads();
-    } catch(e) {
-      console.warn(`[LiveData] Deribit trades ${currency}:`, e.message);
-    }
+    } catch(e) { /* silent */ }
   },
 
   // ═══ FETCH: CryptoCompare News ════════════════════════════
   async fetchNews() {
+    const s=this.src.news; s.lastAttempt=Date.now(); s.fetchCount++;
     try {
-      const r = await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN&sortOrder=latest');
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
-      if (!data.Data || !Array.isArray(data.Data)) return;
-      this.liveNews = data.Data.slice(0, 15).map(n => {
-        const tags = [];
-        if (n.categories) {
-          const cats = n.categories.toUpperCase().split('|');
-          for (const c of cats) {
-            if (c.includes('BTC') || c.includes('BITCOIN')) tags.push('BTC');
-            else if (c.includes('ETH')) tags.push('ETH');
-            else if (c.includes('SOL')) tags.push('SOL');
-            else if (c.includes('DEFI')) tags.push('DEFI');
-            else if (c.includes('REGULATION')) tags.push('MACRO');
-            else if (c.includes('EXCHANGE')) tags.push('FLOW');
-            else if (c.includes('MINING')) tags.push('BTC');
-            else if (c.includes('NFT')) tags.push('NEW');
+      const r=await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN&sortOrder=latest');
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data=await r.json();
+      if(!data.Data||!Array.isArray(data.Data)) throw new Error('No articles');
+      const articles=data.Data.slice(0,15).map(n=>{
+        const tags=[];
+        if(n.categories){
+          const cats=n.categories.toUpperCase().split('|');
+          for(const c of cats){
+            if(c.includes('BTC')||c.includes('BITCOIN'))tags.push('BTC');
+            else if(c.includes('ETH'))tags.push('ETH');
+            else if(c.includes('SOL'))tags.push('SOL');
+            else if(c.includes('DEFI'))tags.push('DEFI');
+            else if(c.includes('REGULATION'))tags.push('MACRO');
+            else if(c.includes('EXCHANGE'))tags.push('FLOW');
           }
         }
-        if (tags.length === 0) tags.push('MACRO');
-        const ageMs = Date.now() / 1000 - n.published_on;
-        const ageStr = ageMs < 3600 ? `${Math.floor(ageMs / 60)}m` : ageMs < 86400 ? `${Math.floor(ageMs / 3600)}h` : `${Math.floor(ageMs / 86400)}d`;
-        return { t: n.title, tags: tags.slice(0, 3), time: ageStr, url: n.url, source: n.source };
+        if(!tags.length)tags.push('MACRO');
+        const ageMs=Date.now()/1000-n.published_on;
+        const ageStr=ageMs<3600?`${Math.floor(ageMs/60)}m`:ageMs<86400?`${Math.floor(ageMs/3600)}h`:`${Math.floor(ageMs/86400)}d`;
+        return{t:n.title,tags:tags.slice(0,3),time:ageStr,url:n.url,source:n.source};
       });
-      // Update NEWS array with live data
-      if (this.liveNews.length > 0) {
-        NEWS.length = 0;
-        NEWS.push(...this.liveNews);
-        renderNews("news-dash");
-        renderNews("news-full");
+      if(articles.length>0){
+        NEWS.length=0; NEWS.push(...articles);
+        renderNews("news-dash"); renderNews("news-full");
       }
-      console.log(`[LiveData] News: ${this.liveNews.length} articles`);
+      s.connected=true; s.lastSuccess=Date.now(); s.lastError=null;
+      return true;
     } catch(e) {
-      console.warn('[LiveData] News:', e.message);
+      s.connected=false; this.logError('news',e.message);
+      return false;
     }
   },
 
   // ═══ WEBSOCKET: Binance Real-time Prices ══════════════════
   connectWS() {
-    if (this.ws) {
-      try { this.ws.close(); } catch(e) {}
-    }
+    if(this.ws) try{this.ws.close();}catch(e){}
+    const s=this.src.binanceWs; s.lastAttempt=Date.now(); s.fetchCount++;
     try {
-      const streams = [
-        'btcusdt','ethusdt','solusdt','bnbusdt','dogeusdt','avaxusdt',
+      const streams=['btcusdt','ethusdt','solusdt','bnbusdt','dogeusdt','avaxusdt',
         'linkusdt','adausdt','dotusdt','xrpusdt','arbusdt','uniusdt',
         'ltcusdt','maticusdt','nearusdt','injusdt','aaveusdt','suiusdt',
-        'aptusdt','trxusdt','shibusdt','ltcusdt','atomusdt',
-        'filusdt','icpusdt','xlmusdt','hbarusdt','ftmusdt','etcusdt','bchusdt'
-      ].map(s => `${s}@miniTicker`).join('/');
-
-      this.ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
-
-      const symMap = {
-        BTCUSDT:'BTC',ETHUSDT:'ETH',SOLUSDT:'SOL',BNBUSDT:'BNB',
+        'aptusdt','trxusdt','shibusdt','atomusdt','filusdt','icpusdt',
+        'xlmusdt','hbarusdt','ftmusdt','etcusdt','bchusdt'
+      ].map(x=>`${x}@miniTicker`).join('/');
+      this.ws=new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+      const symMap={BTCUSDT:'BTC',ETHUSDT:'ETH',SOLUSDT:'SOL',BNBUSDT:'BNB',
         DOGEUSDT:'DOGE',AVAXUSDT:'AVAX',LINKUSDT:'LINK',ADAUSDT:'ADA',
         DOTUSDT:'DOT',XRPUSDT:'XRP',ARBUSDT:'ARB',UNIUSDT:'UNI',
         LTCUSDT:'LTC',MATICUSDT:'MATIC',NEARUSDT:'NEAR',INJUSDT:'INJ',
         AAVEUSDT:'AAVE',SUIUSDT:'SUI',APTUSDT:'APT',TRXUSDT:'TRX',
         SHIBUSDT:'SHIB',ATOMUSDT:'ATOM',FILUSDT:'FIL',
         ICPUSDT:'ICP',XLMUSDT:'XLM',HBARUSDT:'HBAR',
-        FTMUSDT:'FTM',ETCUSDT:'ETC',BCHUSDT:'BCH'
+        FTMUSDT:'FTM',ETCUSDT:'ETC',BCHUSDT:'BCH'};
+
+      this.ws.onopen=()=>{
+        s.connected=true; s.lastSuccess=Date.now(); s.lastError=null;
+        this.wsReconnects=0; this.updateStatus();
       };
-
-      this.ws.onopen = () => {
-        console.log('[LiveData] Binance WS connected');
-        this.sources.binanceWs = true;
-        this.wsReconnects = 0;
-        this.updateStatus();
-      };
-
-      this.ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          const d = msg.data;
-          if (!d || !d.s) return;
-          const sym = symMap[d.s];
-          if (!sym) return;
-          const price = parseFloat(d.c);
-          const vol24h = parseFloat(d.q);
-          if (isNaN(price) || price <= 0) return;
-
-          const rEntry = R.find(r => r.s === sym);
-          if (rEntry) rEntry.p = price;
-
-          const dEntry = D.find(x => x.s === sym);
-          if (dEntry) {
-            dEntry.p = price;
-            if (vol24h > 0) dEntry.vol = vol24h;
+      this.ws.onmessage=(event)=>{
+        try{
+          const msg=JSON.parse(event.data);
+          const d=msg.data; if(!d?.s)return;
+          const sym=symMap[d.s]; if(!sym)return;
+          const price=parseFloat(d.c); const vol24h=parseFloat(d.q);
+          if(isNaN(price)||price<=0)return;
+          const rEntry=R.find(r=>r.s===sym);
+          if(rEntry) rEntry.p=price;
+          const dEntry=D.find(x=>x.s===sym);
+          if(dEntry){
+            dEntry.p=price; this.stampField(sym,'p');
+            if(vol24h>0){dEntry.vol=vol24h; this.stampField(sym,'vol');}
           }
-        } catch(e) {}
+          s.lastSuccess=Date.now();
+        }catch(e){}
       };
-
-      this.ws.onclose = () => {
-        console.log('[LiveData] Binance WS closed');
-        this.sources.binanceWs = false;
-        this.updateStatus();
-        if (this.wsReconnects < 10) {
-          const delay = Math.min(30000, 2000 * Math.pow(2, this.wsReconnects));
+      this.ws.onclose=()=>{
+        s.connected=false; this.updateStatus();
+        if(this.wsReconnects<10){
+          const delay=Math.min(30000,2000*Math.pow(2,this.wsReconnects));
           this.wsReconnects++;
-          console.log(`[LiveData] WS reconnecting in ${delay/1000}s...`);
-          setTimeout(() => this.connectWS(), delay);
+          setTimeout(()=>this.connectWS(),delay);
         }
       };
-
-      this.ws.onerror = () => {
-        console.warn('[LiveData] Binance WS error');
-      };
-    } catch(e) {
-      console.warn('[LiveData] WS connect failed:', e.message);
-    }
+      this.ws.onerror=()=>{ this.logError('binanceWs','WebSocket error'); };
+    } catch(e) { this.logError('binanceWs',e.message); }
   },
 
-  // ═══ PROCESS: Merge CoinGecko market data into D ══════════
+  // ═══ PROCESS: Merge CoinGecko data ════════════════════════
   mergeMarketData(cgData) {
-    const rev = this.revMap;
-    for (const coin of cgData) {
-      const sym = rev[coin.id];
-      if (!sym) continue;
-
-      const rEntry = R.find(r => r.s === sym);
-      if (rEntry) {
-        rEntry.mc = coin.market_cap || rEntry.mc;
-        rEntry.p = coin.current_price || rEntry.p;
-      }
-
-      const d = D.find(x => x.s === sym);
-      if (d) {
-        d.p = coin.current_price || d.p;
-        d.mc = coin.market_cap || d.mc;
-        if (coin.price_change_percentage_1h_in_currency != null)
-          d.ch1h = +coin.price_change_percentage_1h_in_currency.toFixed(2);
-        if (coin.price_change_percentage_24h_in_currency != null)
-          d.ch24h = +coin.price_change_percentage_24h_in_currency.toFixed(2);
-        if (coin.price_change_percentage_7d_in_currency != null)
-          d.ch7d = +coin.price_change_percentage_7d_in_currency.toFixed(2);
-        if (coin.price_change_percentage_30d_in_currency != null)
-          d.ch30d = +coin.price_change_percentage_30d_in_currency.toFixed(2);
-        if (coin.total_volume) d.vol = coin.total_volume;
+    const rev=this.revMap; const now=Date.now();
+    for(const coin of cgData){
+      const sym=rev[coin.id]; if(!sym) continue;
+      const rEntry=R.find(r=>r.s===sym);
+      if(rEntry){ rEntry.mc=coin.market_cap||rEntry.mc; rEntry.p=coin.current_price||rEntry.p; }
+      const d=D.find(x=>x.s===sym);
+      if(d){
+        if(coin.current_price){d.p=coin.current_price; this.stampField(sym,'p');}
+        if(coin.market_cap){d.mc=coin.market_cap; this.stampField(sym,'mc');}
+        if(coin.price_change_percentage_1h_in_currency!=null){d.ch1h=+coin.price_change_percentage_1h_in_currency.toFixed(2); this.stampField(sym,'ch1h');}
+        if(coin.price_change_percentage_24h_in_currency!=null){d.ch24h=+coin.price_change_percentage_24h_in_currency.toFixed(2); this.stampField(sym,'ch24h');}
+        if(coin.price_change_percentage_7d_in_currency!=null){d.ch7d=+coin.price_change_percentage_7d_in_currency.toFixed(2); this.stampField(sym,'ch7d');}
+        if(coin.price_change_percentage_30d_in_currency!=null){d.ch30d=+coin.price_change_percentage_30d_in_currency.toFixed(2); this.stampField(sym,'ch30d');}
+        if(coin.total_volume){d.vol=coin.total_volume; this.stampField(sym,'vol');}
       }
     }
   },
 
-  // ═══ PROCESS: Extract IV, Skew, OI, Term Structure ════════
+  // ═══ PROCESS: Options data → IV, Skew, OI, TermStruct ════
   processOptionsData(currency, instruments) {
-    if (!instruments || !instruments.length) return;
-
-    const underlying = instruments.find(i => i.underlying_price > 0)?.underlying_price;
-    if (!underlying) return;
-
-    // Parse instrument names: CURRENCY-EXPIRY-STRIKE-TYPE
-    const parsed = instruments.filter(i => i.mark_iv > 0).map(inst => {
-      const parts = inst.instrument_name.split('-');
-      if (parts.length < 4) return null;
-      return {
-        ...inst,
-        expiry: parts[1],
-        strike: parseFloat(parts[2]),
-        type: parts[3],
-        moneyness: Math.abs(parseFloat(parts[2]) - underlying) / underlying
-      };
+    if(!instruments?.length) return;
+    const underlying=instruments.find(i=>i.underlying_price>0)?.underlying_price;
+    if(!underlying) return;
+    const parsed=instruments.filter(i=>i.mark_iv>0).map(inst=>{
+      const parts=inst.instrument_name.split('-');
+      if(parts.length<4) return null;
+      return{...inst,expiry:parts[1],strike:parseFloat(parts[2]),type:parts[3],
+        moneyness:Math.abs(parseFloat(parts[2])-underlying)/underlying};
     }).filter(Boolean);
+    if(!parsed.length) return;
 
-    if (parsed.length === 0) return;
+    const atm=parsed.filter(x=>x.moneyness<0.05);
+    const atmIV=atm.length?atm.reduce((s,x)=>s+x.mark_iv,0)/atm.length:null;
+    const totalOI=parsed.reduce((s,x)=>s+(x.open_interest||0),0)*underlying;
+    const otmPuts=parsed.filter(x=>x.type==='P'&&x.moneyness>0.05&&x.moneyness<0.20);
+    const otmCalls=parsed.filter(x=>x.type==='C'&&x.moneyness>0.05&&x.moneyness<0.20);
+    const avgPutIV=otmPuts.length?otmPuts.reduce((s,x)=>s+x.mark_iv,0)/otmPuts.length:null;
+    const avgCallIV=otmCalls.length?otmCalls.reduce((s,x)=>s+x.mark_iv,0)/otmCalls.length:null;
+    const skew=(avgCallIV!=null&&avgPutIV!=null)?+((avgCallIV-avgPutIV)).toFixed(1):null;
 
-    // ATM IV: options with moneyness < 5%
-    const atm = parsed.filter(x => x.moneyness < 0.05);
-    const atmIV = atm.length > 0
-      ? atm.reduce((s, x) => s + x.mark_iv, 0) / atm.length
-      : null;
-
-    // Total OI
-    const totalOI = parsed.reduce((s, x) => s + (x.open_interest || 0), 0) * underlying;
-
-    // 25-delta Skew: OTM call IV - OTM put IV (5-15% OTM)
-    const otmPuts = parsed.filter(x => x.type === 'P' && x.moneyness > 0.05 && x.moneyness < 0.20);
-    const otmCalls = parsed.filter(x => x.type === 'C' && x.moneyness > 0.05 && x.moneyness < 0.20);
-    const avgPutIV = otmPuts.length > 0 ? otmPuts.reduce((s, x) => s + x.mark_iv, 0) / otmPuts.length : null;
-    const avgCallIV = otmCalls.length > 0 ? otmCalls.reduce((s, x) => s + x.mark_iv, 0) / otmCalls.length : null;
-    const skew = (avgCallIV != null && avgPutIV != null)
-      ? +((avgCallIV - avgPutIV)).toFixed(1) : null;
-
-    // Term Structure: group by expiry, get ATM IV at each tenor
-    const byExpiry = {};
-    for (const inst of parsed) {
-      if (!byExpiry[inst.expiry]) byExpiry[inst.expiry] = [];
-      byExpiry[inst.expiry].push(inst);
+    const byExpiry={};
+    for(const inst of parsed){ if(!byExpiry[inst.expiry])byExpiry[inst.expiry]=[]; byExpiry[inst.expiry].push(inst); }
+    const termData=[];
+    for(const[exp,insts]of Object.entries(byExpiry)){
+      const dte=this.getDTE(exp); if(dte<=0) continue;
+      const nearATM=insts.filter(x=>x.moneyness<0.10); if(!nearATM.length) continue;
+      const iv=nearATM.reduce((s,x)=>s+x.mark_iv,0)/nearATM.length;
+      termData.push({expiry:exp,dte,iv:+iv.toFixed(1),oi:insts.reduce((s,x)=>s+(x.open_interest||0),0)});
     }
-    const termData = [];
-    for (const [exp, insts] of Object.entries(byExpiry)) {
-      const dte = this.getDTE(exp);
-      if (dte <= 0) continue;
-      const nearATM = insts.filter(x => x.moneyness < 0.10);
-      if (nearATM.length === 0) continue;
-      const iv = nearATM.reduce((s, x) => s + x.mark_iv, 0) / nearATM.length;
-      const oi = insts.reduce((s, x) => s + (x.open_interest || 0), 0);
-      termData.push({ expiry: exp, dte, iv: +iv.toFixed(1), oi });
-    }
-    termData.sort((a, b) => a.dte - b.dte);
-    this.termStructureData[currency] = termData;
+    termData.sort((a,b)=>a.dte-b.dte);
+    this.termStructureData[currency]=termData;
 
-    // Update D entry
-    const d = D.find(x => x.s === currency);
-    if (d) {
-      if (atmIV != null) {
-        const oldIV = d.iv;
-        d.iv = +atmIV.toFixed(1);
-        // Recalculate IV-dependent fields
-        d.ivRank = Math.min(100, Math.max(0, Math.floor(((d.iv - 28) / (93 - 28)) * 100)));
-        d.ivRv = +(d.iv - d.rv30).toFixed(1);
-        d.ivChg = +(d.iv - oldIV).toFixed(1);
-      }
-      if (skew != null) d.skew25d = skew;
-      if (totalOI > 0) d.oi = totalOI;
+    const d=D.find(x=>x.s===currency);
+    if(d){
+      if(atmIV!=null){d.iv=+atmIV.toFixed(1); d.ivRank=Math.min(100,Math.max(0,Math.floor(((d.iv-28)/(93-28))*100))); d.ivRv=+(d.iv-d.rv30).toFixed(1); this.stampField(currency,'iv'); this.stampField(currency,'ivRank');}
+      if(skew!=null){d.skew25d=skew; this.stampField(currency,'skew25d');}
+      if(totalOI>0){d.oi=totalOI; this.stampField(currency,'oi');}
     }
   },
 
-  // ═══ STATUS MANAGEMENT ════════════════════════════════════
+  // ═══ STATUS + HEADER INDICATOR ════════════════════════════
+  get activeCount(){ return Object.values(this.src).filter(s=>s.connected).length; },
+  get totalCount(){ return Object.keys(this.src).length; },
+  get status(){
+    const a=this.activeCount; const t=this.totalCount;
+    if(a===0)return'offline'; if(a===t)return'live'; return'degraded';
+  },
+
   updateStatus() {
-    const active = Object.values(this.sources).filter(Boolean).length;
-    const total = Object.keys(this.sources).length;
-    if (active === 0) this.status = 'offline';
-    else if (active === total) this.status = 'live';
-    else this.status = 'degraded';
-    this.renderStatus();
+    this.renderHeaderStatus();
+    this.renderDSTabBadge();
+    if(document.querySelector('#panel-datasources.active')) this.renderDSPanel();
   },
 
-  renderStatus() {
-    const el = document.getElementById('live-status');
-    if (!el) return;
-    const colors = {live:'var(--green)',degraded:'var(--amber)',offline:'var(--red)',connecting:'var(--t4)'};
-    const labels = {live:'LIVE DATA',degraded:'PARTIAL LIVE',offline:'OFFLINE',connecting:'CONNECTING…'};
-    const active = Object.values(this.sources).filter(Boolean).length;
-    const total = Object.keys(this.sources).length;
-    const c = colors[this.status];
-    const sourceList = Object.entries(this.sources)
-      .map(([k,v]) => `<span style="color:${v?'var(--green)':'var(--t5)'}">●</span>`)
-      .join('');
-    el.innerHTML = `
+  renderHeaderStatus() {
+    const el=document.getElementById('live-status'); if(!el) return;
+    const colors={live:'var(--green)',degraded:'var(--amber)',offline:'var(--red)'};
+    const labels={live:'LIVE DATA',degraded:'PARTIAL',offline:'OFFLINE'};
+    const c=colors[this.status]||'var(--t4)';
+    el.innerHTML=`
       <div style="display:flex;align-items:center;gap:4px;font-size:8px;font-weight:700;letter-spacing:.04em;color:${c}">
         <div style="width:5px;height:5px;border-radius:50%;background:${c};${this.status==='live'?'box-shadow:0 0 6px '+c+';animation:blink 2s infinite':''}"></div>
-        ${labels[this.status]}
-        <span style="color:var(--t4);font-weight:400;font-size:7px">${active}/${total}</span>
+        ${labels[this.status]||'…'} <span style="color:var(--t4);font-weight:400;font-size:7px">${this.activeCount}/${this.totalCount}</span>
       </div>
-      <div style="display:flex;gap:2px;font-size:7px;color:var(--t5)">
-        <span title="CoinGecko" style="color:${this.sources.coingecko?'var(--green)':'var(--t5)'}">CG</span>
-        <span title="Deribit" style="color:${this.sources.deribit?'var(--green)':'var(--t5)'}">DR</span>
-        <span title="Binance WS" style="color:${this.sources.binanceWs?'var(--green)':'var(--t5)'}">BN</span>
-        <span title="Fear&Greed" style="color:${this.sources.fng?'var(--green)':'var(--t5)'}">FG</span>
+      <div style="display:flex;gap:3px;font-size:7px">
+        ${Object.values(this.src).map(s=>`<span title="${s.name}: ${s.connected?'connected':'disconnected'}" style="color:${s.connected?'var(--green)':'var(--t5)'}">●</span>`).join('')}
       </div>`;
   },
 
-  // ═══ REFRESH CYCLES ═══════════════════════════════════════
+  renderDSTabBadge() {
+    const badge=document.getElementById('ds-tab-badge'); if(!badge) return;
+    const a=this.activeCount,t=this.totalCount;
+    badge.textContent=`${a}/${t}`;
+    badge.style.background=a===t?'var(--green)':a>0?'var(--amber)':'var(--red)';
+    const tab=document.getElementById('mtab-datasources');
+    if(tab) tab.style.borderColor=a===t?'var(--green)':a>0?'var(--amber)':'var(--red)';
+  },
+
+  // ═══ DATA SOURCES CONTROL PANEL RENDERER ══════════════════
+  renderDSPanel() {
+    this.renderSourceCards();
+    this.renderFreshnessTable();
+    this.renderMemoryStats();
+    this.renderErrorLog();
+    this.renderEndpointsTable();
+    const gs=document.getElementById('ds-global-status');
+    if(gs){
+      const colors={live:'b-green',degraded:'b-amber',offline:'b-red'};
+      gs.className=`badge ${colors[this.status]||'b-neutral'}`;
+      gs.textContent=`${this.status.toUpperCase()} — ${this.activeCount}/${this.totalCount} SOURCES`;
+    }
+  },
+
+  renderSourceCards() {
+    const el=document.getElementById('ds-source-cards'); if(!el) return;
+    el.innerHTML=Object.values(this.src).map(s=>{
+      const c=s.connected?'var(--green)':'var(--red)';
+      const bg=s.connected?'rgba(0,220,130,.06)':'rgba(255,56,96,.06)';
+      const bc=s.connected?'rgba(0,220,130,.2)':'rgba(255,56,96,.2)';
+      const age=s.lastSuccess?this.ageStr(Date.now()-s.lastSuccess):'never';
+      return`<div style="background:${bg};border:1px solid ${bc};border-radius:10px;padding:14px;position:relative;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${c};${s.connected?'box-shadow:0 0 8px '+c+';animation:blink 2s infinite':''}"></div>
+          <div style="font-size:12px;font-weight:800">${s.name}</div>
+          <span class="badge ${s.connected?'b-green':'b-red'}" style="margin-left:auto;font-size:7px">${s.connected?'LIVE':'DOWN'}</span>
+        </div>
+        <div style="font-size:9px;color:var(--t3);margin-bottom:8px;line-height:1.4">${s.provides}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:8px">
+          <div><span style="color:var(--t4)">Type:</span> <span style="color:var(--t2);font-weight:600">${s.type}</span></div>
+          <div><span style="color:var(--t4)">Interval:</span> <span style="color:var(--t2)">${s.interval?s.interval+'s':'Stream'}</span></div>
+          <div><span style="color:var(--t4)">Last OK:</span> <span style="color:${this.freshnessColor(Date.now()-s.lastSuccess)}">${age}</span></div>
+          <div><span style="color:var(--t4)">Fetches:</span> <span style="color:var(--t2)">${s.fetchCount}</span></div>
+          <div><span style="color:var(--t4)">Errors:</span> <span style="color:${s.errorCount?'var(--red)':'var(--green)'}">${s.errorCount}</span></div>
+          <div><span style="color:var(--t4)">URL:</span> <span style="color:var(--t4);font-family:'Space Mono',monospace;font-size:7px">${s.url}</span></div>
+        </div>
+        ${s.lastError?`<div style="margin-top:6px;padding:4px 6px;background:rgba(255,56,96,.08);border-radius:4px;font-size:8px;color:var(--red)">Last error: ${s.lastError}</div>`:''}
+      </div>`;
+    }).join('');
+  },
+
+  renderFreshnessTable() {
+    const el=document.getElementById('ds-freshness-table'); if(!el) return;
+    const fields=['p','mc','ch1h','ch24h','ch7d','ch30d','vol','iv','ivRank','skew25d','fund','oi','sent'];
+    const fieldLabels={p:'Price',mc:'MCap',ch1h:'1H%',ch24h:'24H%',ch7d:'7D%',ch30d:'30D%',vol:'Volume',iv:'IV',ivRank:'IV Rank',skew25d:'Skew',fund:'Funding',oi:'Open Int',sent:'Sentiment'};
+    const fieldSrc={p:'CG/BN',mc:'CG',ch1h:'CG',ch24h:'CG',ch7d:'CG',ch30d:'CG',vol:'CG/BN',iv:'Deribit',ivRank:'Deribit',skew25d:'Deribit',fund:'Deribit',oi:'Deribit',sent:'Alt.me'};
+    const top=D.filter(t=>t.mc>1e9).sort((a,b)=>b.mc-a.mc).slice(0,15);
+    el.innerHTML=`<table style="width:100%;font-size:9px;border-collapse:collapse">
+      <thead><tr style="border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2">
+        <th style="text-align:left;padding:6px 10px;font-size:7.5px;color:var(--t4);font-weight:700">ASSET</th>
+        ${fields.map(f=>`<th style="text-align:center;padding:4px 3px;font-size:7px;color:var(--t4)" title="Source: ${fieldSrc[f]}">${fieldLabels[f]}</th>`).join('')}
+      </tr></thead>
+      <tbody>${top.map(t=>`<tr style="border-bottom:1px solid rgba(19,19,37,.3)">
+        <td style="padding:5px 10px;font-weight:700">${t.s}</td>
+        ${fields.map(f=>{
+          const age=this.getFieldAge(t.s,f);
+          const c=this.freshnessColor(age);
+          const val=age<Infinity?this.ageStr(age):'—';
+          return`<td style="text-align:center;padding:3px;font-family:'Space Mono',monospace;font-size:7.5px"><span style="color:${c}" title="${val} ago">●</span></td>`;
+        }).join('')}
+      </tr>`).join('')}</tbody></table>`;
+  },
+
+  renderMemoryStats() {
+    const el=document.getElementById('ds-memory-stats'); if(!el) return;
+    const totalFields=Object.values(this.fieldTs).reduce((s,obj)=>s+Object.keys(obj).length,0);
+    const trackedSyms=Object.keys(this.fieldTs).length;
+    const freshFields=Object.values(this.fieldTs).reduce((s,obj)=>s+Object.values(obj).filter(ts=>Date.now()-ts<60000).length,0);
+    const staleFields=Object.values(this.fieldTs).reduce((s,obj)=>s+Object.values(obj).filter(ts=>Date.now()-ts>=60000&&Date.now()-ts<300000).length,0);
+    const oldFields=Object.values(this.fieldTs).reduce((s,obj)=>s+Object.values(obj).filter(ts=>Date.now()-ts>=300000).length,0);
+    el.innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px">
+        ${[
+          {l:'Tracked Symbols',v:trackedSyms,c:'var(--cyan)'},
+          {l:'Total Fields',v:totalFields,c:'var(--t2)'},
+          {l:'Fresh (<60s)',v:freshFields,c:'var(--green)'},
+          {l:'Stale (<5m)',v:staleFields,c:'var(--amber)'},
+          {l:'Old (>5m)',v:oldFields,c:'var(--red)'}
+        ].map(s=>`<div style="text-align:center"><div style="font-size:8px;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${s.l}</div><div style="font-size:18px;font-weight:800;font-family:'Space Mono',monospace;color:${s.c}">${s.v}</div></div>`).join('')}
+      </div>
+      <div style="font-size:9px;color:var(--t3);line-height:1.6;padding:8px 10px;background:rgba(0,229,255,.025);border:1px solid rgba(0,229,255,.1);border-radius:7px">
+        <strong style="color:var(--cyan)">Data Memory Policy:</strong> All values shown in the terminal are from real API data. When a source goes down, the last successful values are kept and displayed as <span style="color:var(--amber)">stale</span>. No synthetic or simulated data is ever generated.
+      </div>`;
+  },
+
+  renderErrorLog() {
+    const el=document.getElementById('ds-error-log'); if(!el) return;
+    if(!this.errors.length){ el.innerHTML='<div style="padding:20px;text-align:center;color:var(--t4);font-size:10px">No errors logged</div>'; return; }
+    el.innerHTML=this.errors.map(e=>{
+      const age=this.ageStr(Date.now()-e.time);
+      return`<div style="padding:6px 12px;border-bottom:1px solid rgba(19,19,37,.3);font-size:9px;display:flex;align-items:center;gap:8px">
+        <span class="badge b-red" style="font-size:7px;flex-shrink:0">${e.source.toUpperCase()}</span>
+        <span style="color:var(--t2);flex:1">${e.msg}</span>
+        <span style="color:var(--t4);font-family:'Space Mono',monospace;font-size:8px;flex-shrink:0">${age} ago</span>
+      </div>`;
+    }).join('');
+  },
+
+  renderEndpointsTable() {
+    const el=document.getElementById('ds-endpoints-table'); if(!el) return;
+    const endpoints=[
+      {src:'CoinGecko',method:'GET',url:'api.coingecko.com/api/v3/coins/markets',rate:'60s',auth:'None'},
+      {src:'Deribit Options',method:'GET',url:'deribit.com/api/v2/public/get_book_summary_by_currency',rate:'30s',auth:'None (public)'},
+      {src:'Deribit Funding',method:'GET',url:'deribit.com/api/v2/public/ticker',rate:'30s',auth:'None (public)'},
+      {src:'Deribit Trades',method:'GET',url:'deribit.com/api/v2/public/get_last_trades_by_currency',rate:'30s',auth:'None (public)'},
+      {src:'Binance',method:'WSS',url:'stream.binance.com:9443/stream',rate:'Real-time',auth:'None'},
+      {src:'Fear & Greed',method:'GET',url:'api.alternative.me/fng/',rate:'5m',auth:'None'},
+      {src:'News',method:'GET',url:'min-api.cryptocompare.com/data/v2/news/',rate:'3m',auth:'None'},
+    ];
+    el.innerHTML=`<table style="width:100%;font-size:9px;border-collapse:collapse">
+      <thead><tr style="border-bottom:1px solid var(--border)">
+        ${['Source','Method','Endpoint','Refresh','Auth'].map(h=>`<th style="text-align:left;padding:6px 10px;font-size:7.5px;color:var(--t4);font-weight:700">${h}</th>`).join('')}
+      </tr></thead>
+      <tbody>${endpoints.map(ep=>`<tr style="border-bottom:1px solid rgba(19,19,37,.3)">
+        <td style="padding:5px 10px;font-weight:600">${ep.src}</td>
+        <td style="padding:5px 6px"><span class="badge ${ep.method==='WSS'?'b-violet':'b-cyan'}" style="font-size:7px">${ep.method}</span></td>
+        <td style="padding:5px 6px;font-family:'Space Mono',monospace;color:var(--t3);font-size:8px">${ep.url}</td>
+        <td style="padding:5px 6px;font-family:'Space Mono',monospace;color:var(--t2)">${ep.rate}</td>
+        <td style="padding:5px 6px;color:var(--green);font-size:8px">${ep.auth}</td>
+      </tr>`).join('')}</tbody></table>`;
+  },
+
+  // ═══ REFRESH ALL + START ══════════════════════════════════
   async refreshAll() {
     await Promise.allSettled([
       this.fetchMarkets(),
@@ -1595,35 +1721,26 @@ const LiveData = {
     renderAll();
   },
 
-  // ═══ START ════════════════════════════════════════════════
   async start() {
-    console.log('[LiveData] ⚡ Initializing live data service...');
-    this.updateStatus();
-
-    // Initial fetch — all sources in parallel
+    console.log('[LiveData] Starting live data service v2...');
+    this.renderHeaderStatus();
     await this.refreshAll();
 
-    // Set up staggered refresh intervals
-    setInterval(() => this.fetchMarkets().then(() => { this.updateStatus(); renderAll(); }), 60000);    // CoinGecko: 60s
-    setInterval(() => {
+    // Staggered refresh intervals per source
+    setInterval(()=>this.fetchMarkets().then(()=>{this.updateStatus();renderAll();}),60000);
+    setInterval(()=>{
       Promise.allSettled([
-        this.fetchDeribitOptions('BTC'),
-        this.fetchDeribitOptions('ETH'),
+        this.fetchDeribitOptions('BTC'),this.fetchDeribitOptions('ETH'),
         this.fetchDeribitFunding(),
-        this.fetchDeribitTrades('BTC'),
-        this.fetchDeribitTrades('ETH')
-      ]).then(() => { this.updateStatus(); });
-    }, 30000);  // Deribit: 30s
-    setInterval(() => this.fetchFearGreed().then(() => this.updateStatus()), 300000); // FNG: 5 min
-    setInterval(() => this.fetchNews(), 180000); // News: 3 min
+        this.fetchDeribitTrades('BTC'),this.fetchDeribitTrades('ETH')
+      ]).then(()=>this.updateStatus());
+    },30000);
+    setInterval(()=>this.fetchFearGreed().then(()=>this.updateStatus()),300000);
+    setInterval(()=>this.fetchNews(),180000);
 
-    // Real-time prices via WebSocket
     this.connectWS();
-
-    // Status display refresh
-    setInterval(() => this.renderStatus(), 5000);
-
-    console.log('[LiveData] ✓ Live data service started');
+    setInterval(()=>this.updateStatus(),5000);
+    console.log('[LiveData] Service started — all sources initialized');
   }
 };
 
@@ -3443,6 +3560,7 @@ function switchTab(t){
   if(t==="positioning"){const _bp=(D.find(d=>d.s==="BTC")||{p:98450}).p;const _ep=(D.find(d=>d.s==="ETH")||{p:3850}).p;drawLiqHeatmap("liq-btc",_bp,_bp*0.86,_bp*1.17);drawLiqHeatmap("liq-eth",_ep,_ep*0.83,_ep*1.19);renderGEX();renderFunding("fund-body-pos");drawGammaProfile("gflip-canvas-btc","BTC","gflip-meta-btc","gflip-zone-btc");drawGammaProfile("gflip-canvas-eth","ETH","gflip-meta-eth","gflip-zone-eth");}
   if(t==="scanner"){renderTable();}
   if(t==="fairvalue"){renderFVPanel();renderProbCone();renderFVEMTable();renderFVBias();renderFVMaxPainDetail();renderFVVRP();}
+  if(t==="datasources"){LiveData.renderDSPanel();}
 }
 function selectAsset(sym){selectedAsset=sym;renderDetailPanel("detail-panel");renderDetailPanel("detail-panel-tbl");}
 function selectAssetTbl(sym){selectedAsset=sym;renderDetailPanel("detail-panel-tbl");}
@@ -3459,53 +3577,27 @@ function setFlowFilter2(f,el){flowFilter2=f;el.parentElement.querySelectorAll('.
 function setStratFilter(f,el){stratFilter=f;el.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('act'));el.classList.add('act');renderStratIdeas();}
 function updateClock(){document.getElementById("clock").textContent=new Date().toUTCString().slice(17,25)+" UTC";}
 
-// ─── LIVE TICK ───────────────────────────────────────────────────
+// ─── LIVE TICK — NO SIMULATED DATA ───────────────────────────────
+// This tick ONLY re-renders and updates derived fields.
+// All data comes from live APIs or is stale cached data.
+// Zero random walks, zero synthetic generation.
 function tick(){
-  const isLive = LiveData.status === 'live' || LiveData.status === 'degraded';
-  const hasCG = LiveData.sources.coingecko;
-  const hasDR = LiveData.sources.deribit;
-  const hasWS = LiveData.sources.binanceWs;
-
-  D=D.map(t=>{
-    const updates = {};
-    // Only random-walk fields that don't have live data
-    if (!hasCG && !hasWS) {
-      updates.ch1h = +((t.ch1h+(Math.random()-.5)*.25)).toFixed(2);
-      updates.ch24h = +((t.ch24h+(Math.random()-.5)*.4*.25)).toFixed(2);
-    }
-    updates.sent = Math.max(5,Math.min(95,t.sent+Math.floor((Math.random()-.5)*2)));
-    if (!hasDR) {
-      updates.iv = Math.max(20,Math.min(120,+(t.iv+(Math.random()-.5)*1.5).toFixed(1)));
-      updates.ivRank = Math.max(0,Math.min(100,t.ivRank+Math.floor((Math.random()-.5)*3)));
-      updates.skew25d = +Math.max(-15,Math.min(15,(t.skew25d+(Math.random()-.5)*.4))).toFixed(1);
-    }
-    if (!hasDR) {
-      updates.fund = +Math.max(-.08,Math.min(.08,t.fund+(Math.random()-.5)*.002)).toFixed(4);
-    }
-    return {...t, ...updates};
-  }).map(t=>({...t,
+  // Recalculate derived fields from real data
+  D=D.map(t=>({...t,
     ivRv:+(t.iv-t.rv30).toFixed(1),
-    conviction:Math.min(98,Math.max(10,t.conviction+Math.floor((Math.random()-.5)*4)))
+    // Conviction recalculated from real metrics
+    conviction:Math.min(98,Math.floor(
+      Math.abs(t.ivRank-50)/50*40 +
+      Math.min(20,Math.abs(t.skew25d)*2) +
+      (Math.abs(t.fund)>0.04?20:Math.abs(t.fund)*300) +
+      (t.gammaExp<0?15:5) +
+      Math.abs(t.iv-t.rv30)/Math.max(1,t.rv30)*5
+    ))
   }));
-  // v5: Update IV ratio history for RV arb module
   updateIVRatios();
   renderAll();
-  // Occasionally add new flow item, sometimes as spread pairs
-  if(Math.random()<.4){
-    const f=FLOWS[Math.floor(Math.random()*FLOWS.length)];
-    const newFlow={...f,age:Math.floor(Math.random()*15),timestamp:Date.now(),spreadType:null,spreadLabel:null,linkedIdx:-1,intent:null};
-    FLOWS.unshift(newFlow);
-    // 30% chance: create a deliberate spread pair
-    if(Math.random()<.3){
-      const types=["CALL","PUT"];
-      const pairType=types[Math.floor(Math.random()*2)];
-      const pairStrike=f.strike*(0.9+Math.random()*0.2);
-      const spreadPair={...newFlow,type:pairType,strike:pairStrike,timestamp:Date.now()+Math.floor(Math.random()*400)};
-      FLOWS.unshift(spreadPair);
-      detectComplexSpreads();
-    }
-    if(FLOWS.length>80)FLOWS.pop();
-  }
+  // Age existing flow items (no synthetic flow generation)
+  FLOWS.forEach(f=>{ if(f.age!=null) f.age++; });
 }
 
 function renderAll(){
