@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<base href="/terminal/"/>
-<title>KAITO — Institutional Crypto Risk Terminal</title>
+<title>PowerTrade — Institutional Crypto Risk Terminal</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -43,26 +42,6 @@ a{color:var(--cyan);text-decoration:none}
 .tag-vol{background:var(--violet2);color:var(--violet)}.tag-hot{background:var(--amber2);color:var(--amber)}
 .tag-info{background:var(--blue2);color:var(--blue)}.tag-sym{background:rgba(255,255,255,.04);color:var(--t2)}
 .tag-teal{background:var(--teal2);color:var(--teal)}
-
-/* ═══ LOGIN SCREEN ═══ */
-#login-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s}
-#login-screen.hidden{opacity:0;pointer-events:none}
-.login-card{background:#1e293b;backdrop-filter:blur(10px);border:1px solid rgba(99,102,241,0.2);border-radius:16px;padding:48px 40px;width:380px;box-shadow:0 25px 60px rgba(0,0,0,.5)}
-.login-brand{text-align:center;margin-bottom:36px}
-.login-brand h1{font-size:36px;font-weight:900;color:#f59e0b;letter-spacing:2px;margin-bottom:4px}
-.login-brand p{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.12em;text-transform:uppercase}
-.login-field{margin-bottom:18px}
-.login-field label{display:block;font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
-.login-field input{width:100%;background:rgba(15,23,42,.8);border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:12px 14px;color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
-.login-field input:focus{border-color:rgba(245,158,11,.5);box-shadow:0 0 0 3px rgba(245,158,11,.1)}
-.login-btn{width:100%;padding:13px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:8px;color:#0f172a;font-size:13px;font-weight:800;letter-spacing:.04em;cursor:pointer;font-family:inherit;transition:transform .1s,box-shadow .2s;margin-top:8px}
-.login-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(245,158,11,.3)}
-.login-btn:active{transform:translateY(0)}
-.login-error{color:#ff3860;font-size:11px;text-align:center;margin-top:12px;min-height:16px}
-.login-tier-info{margin-top:24px;padding-top:20px;border-top:1px solid rgba(99,102,241,.1)}
-.login-tier{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:10px;color:rgba(255,255,255,.35)}
-.login-tier .tier-name{color:rgba(245,158,11,.7);font-weight:700}
-.login-tier .tier-price{font-family:'Space Mono',monospace}
 
 /* Card */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden}
@@ -463,39 +442,14 @@ header{background:rgba(4,4,10,0.97);backdrop-filter:blur(24px);border-bottom:1px
 </head>
 <body>
 
-<!-- ═══ LOGIN SCREEN (KAITO) ═══ -->
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-brand">
-      <h1>KAITO</h1>
-      <p>Institutional Crypto Risk Terminal</p>
-    </div>
-    <div class="login-field">
-      <label>Username</label>
-      <input type="text" id="login-user" placeholder="Enter username" autocomplete="off"/>
-    </div>
-    <div class="login-field">
-      <label>Password</label>
-      <input type="password" id="login-pass" placeholder="Enter password" autocomplete="off"/>
-    </div>
-    <button class="login-btn" onclick="doLogin()">ACCESS TERMINAL</button>
-    <div class="login-error" id="login-error"></div>
-    <div class="login-tier-info">
-      <div class="login-tier"><span class="tier-name">Pro Trader</span><span class="tier-price">$199/mo</span></div>
-      <div class="login-tier"><span class="tier-name">Institutional Desk</span><span class="tier-price">$2,500/mo</span></div>
-      <div class="login-tier"><span class="tier-name">Enterprise API</span><span class="tier-price">$10k+/mo</span></div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MAIN APP (hidden until login) ═══ -->
-<div id="app" style="display:none">
+<!-- ═══ MAIN APP ═══ -->
+<div id="app">
 
 <!-- ═══ HEADER ═══ -->
 <header><div class="container"><div class="hdr">
   <div class="logo">
-    <div class="logo-m">K</div>
-    <div><h1><b>KAITO</b></h1><p>Risk Intelligence Terminal</p></div>
+    <div class="logo-m">PT</div>
+    <div><h1><b>PowerTrade</b></h1><p>Risk Intelligence Terminal</p></div>
   </div>
 
   <!-- Mode Toggle -->
@@ -570,7 +524,7 @@ header{background:rgba(4,4,10,0.97);backdrop-filter:blur(24px);border-bottom:1px
 
 <!-- Footer -->
 <div style="text-align:center;padding:20px;font-size:8.5px;color:var(--t5);border-top:1px solid var(--border);margin-top:20px">
-  KAITO Risk Intelligence Terminal v6.0 · Institutional Alpha Engine · Data: CoinGecko · Deribit · Binance WS · Alternative.me · CryptoCompare<br/>
+  PowerTrade Risk Intelligence Terminal v6.0 · Institutional Alpha Engine · Data: CoinGecko · Deribit · Binance WS · Alternative.me · CryptoCompare<br/>
   <a href="https://power.trade" target="_blank">power.trade</a> · <a href="https://power.trade/en/market-insights" target="_blank">Market Insights</a> · Not Financial Advice
 </div>
 
@@ -580,30 +534,9 @@ header{background:rgba(4,4,10,0.97);backdrop-filter:blur(24px);border-bottom:1px
 <!--  JAVASCRIPT ENGINE                                             -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <script>
-// ═══ LOGIN / AUTH ═══════════════════════════════════════════════
-function doLogin(){
-  const u=document.getElementById('login-user').value.trim();
-  const p=document.getElementById('login-pass').value.trim();
-  if(u==='admin'&&p==='admin'){
-    localStorage.setItem('kaito_session',JSON.stringify({user:u,ts:Date.now()}));
-    showApp();
-  } else {
-    document.getElementById('login-error').textContent='Invalid credentials. Try admin / admin';
-  }
-}
+// ═══ BOOT (no login) ═══════════════════════════════════════════
 function showApp(){
-  const ls=document.getElementById('login-screen');
-  ls.classList.add('hidden');
-  setTimeout(()=>{ls.style.display='none'},400);
-  document.getElementById('app').style.display='block';
   initApp();
-}
-function checkSession(){
-  const s=localStorage.getItem('kaito_session');
-  if(s){try{const d=JSON.parse(s);if(Date.now()-d.ts<86400000*7){showApp();return;}}catch(e){}}
-  document.getElementById('login-screen').style.display='flex';
-  document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
-  document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus()});
 }
 
 // ═══ MODE STATE ═══════════════════════════════════════════════
@@ -1628,12 +1561,12 @@ function buildOptionsPanels(){
   <!-- OPTIONS: Signal Feed -->
   <div class="tab-panel active" id="panel-signals">
     <div class="ai-search-wrap">
-      <span class="ai-icon">K</span>
-      <input class="ai-search" id="ai-input" type="text" placeholder="Ask KAITO AI: 'Where is dealer hedging pressure?' · 'Best Vanna trade?'" />
+      <span class="ai-icon">PT</span>
+      <input class="ai-search" id="ai-input" type="text" placeholder="Ask PowerTrade AI: 'Where is dealer hedging pressure?' · 'Best Vanna trade?'" />
       <div class="ai-kbd"><span class="tag tag-sym">ENTER</span></div>
     </div>
     <div class="ai-response" id="ai-response">
-      <div class="thinking" id="ai-thinking">KAITO AI is analyzing…</div>
+      <div class="thinking" id="ai-thinking">PowerTrade AI is analyzing…</div>
       <div id="ai-text"></div>
     </div>
     <div class="regime-panel mb" id="regime-panel" style="border-color:var(--border)">
@@ -1798,7 +1731,7 @@ function buildOptionsPanels(){
 function buildPricingPanel(){
   return `<div style="padding-top:14px">
     <div class="section-title" style="margin-bottom:6px">Strategic Pricing — B2B Risk Infrastructure</div>
-    <div style="font-size:11px;color:var(--t3);margin-bottom:16px;line-height:1.6">Stop selling B2C SaaS. Start selling B2B Risk Infrastructure. KAITO delivers institutional-grade dealer exposure analytics.</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:16px;line-height:1.6">Stop selling B2C SaaS. Start selling B2B Risk Infrastructure. PowerTrade delivers institutional-grade dealer exposure analytics.</div>
     <div class="tier-grid">
       <div class="tier-card">
         <div class="tier-name" style="color:var(--cyan)">Pro Trader</div>
@@ -1837,7 +1770,7 @@ function buildPricingPanel(){
           <li>Raw WebSocket Data Pipe</li>
           <li>Net GEX Stream (sub-second)</li>
           <li>ML Probability Signals</li>
-          <li>Python SDK: import kaito</li>
+          <li>Python SDK: import powertrade</li>
           <li>Custom SLA & Integrations</li>
         </ul>
       </div>
@@ -2389,7 +2322,7 @@ function initApp(){
 }
 
 // ═══ BOOT ═══════════════════════════════════════════════════════
-checkSession();
+showApp();
 </script>
 </body>
 </html>
