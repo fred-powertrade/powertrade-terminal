@@ -448,20 +448,6 @@ header{background:var(--header-bg);backdrop-filter:blur(24px);-webkit-backdrop-f
 .greek-val{font-size:9.5px;font-weight:700;font-family:'Roboto Mono',monospace;width:80px;text-align:right}
 .greek-signal{width:80px;text-align:right}
 
-/* Pricing tiers */
-.tier-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:14px 0}
-.tier-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:20px;position:relative;overflow:hidden;transition:border-color .2s}
-.tier-card:hover{border-color:var(--border3)}
-.tier-card.tier-highlight{border-color:rgba(245,158,11,.3)}
-.tier-card.tier-highlight::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#d97706)}
-.tier-name{font-size:13px;font-weight:800;margin-bottom:2px}
-.tier-target{font-size:9px;color:var(--t4);margin-bottom:10px}
-.tier-price-tag{font-size:24px;font-weight:900;font-family:'Roboto Mono',monospace;color:var(--amber);margin-bottom:4px}
-.tier-per{font-size:9px;color:var(--t4)}
-.tier-features{margin-top:12px;list-style:none;padding:0}
-.tier-features li{font-size:10px;color:var(--t2);padding:4px 0;border-bottom:1px solid rgba(19,19,37,.3);display:flex;align-items:center;gap:6px}
-.tier-features li::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--green);flex-shrink:0}
-
 /* ═══ PREDICTIVE SENTIMENT DELTA MAP ═══ */
 .sdm-container{position:relative;min-height:360px;padding:16px;overflow:hidden}
 .sdm-word{position:absolute;cursor:pointer;transition:all .3s;text-shadow:0 0 8px rgba(0,0,0,.5);font-weight:700;white-space:nowrap;user-select:none}
@@ -1876,8 +1862,7 @@ function buildTabs(){
       <div class="mtab" onclick="switchTab('scanner')">Scanner</div>
       <div class="mtab" onclick="switchTab('stresstest')">Stress Test</div>
       <div class="mtab" onclick="switchTab('intel')">Intel</div>
-      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research</div>
-      <div class="mtab" onclick="switchTab('pricing')">Plans</div>`;
+      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research</div>`;
   } else {
     el.innerHTML=`
       <div class="mtab active" onclick="switchTab('signals')">Signal Feed</div>
@@ -1889,8 +1874,7 @@ function buildTabs(){
       <div class="mtab" onclick="switchTab('optionslab')">Options Lab</div>
       <div class="mtab" onclick="switchTab('positioning')">Positioning</div>
       <div class="mtab" onclick="switchTab('fairvalue')">Fair Value</div>
-      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research</div>
-      <div class="mtab" onclick="switchTab('pricing')">Plans</div>`;
+      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research</div>`;
   }
 }
 
@@ -2138,10 +2122,7 @@ function buildSpotPanels(){
   </div>
 
   <!-- xStocks Research -->
-  <div class="tab-panel" id="panel-xstocks">${buildXStocksPanel()}</div>
-
-  <!-- Pricing -->
-  <div class="tab-panel" id="panel-pricing">${buildPricingPanel()}</div>`;
+  <div class="tab-panel" id="panel-xstocks">${buildXStocksPanel()}</div>`;
 }
 
 function buildOptionsPanels(){
@@ -2425,60 +2406,7 @@ function buildOptionsPanels(){
   </div>
 
   <!-- xStocks Research -->
-  <div class="tab-panel" id="panel-xstocks">${buildXStocksPanel()}</div>
-
-  <!-- Pricing -->
-  <div class="tab-panel" id="panel-pricing">${buildPricingPanel()}</div>`;
-}
-
-function buildPricingPanel(){
-  return `<div style="padding-top:14px">
-    <div class="section-title" style="margin-bottom:6px">Strategic Pricing — B2B Risk Infrastructure</div>
-    <div style="font-size:11px;color:var(--t3);margin-bottom:16px;line-height:1.6">Stop selling B2C SaaS. Start selling B2B Risk Infrastructure. PowerTrade delivers institutional-grade dealer exposure analytics.</div>
-    <div class="tier-grid">
-      <div class="tier-card">
-        <div class="tier-name" style="color:var(--cyan)">Pro Trader</div>
-        <div class="tier-target">Individual Alpha Seekers</div>
-        <div class="tier-price-tag">$199</div>
-        <div class="tier-per">/month</div>
-        <ul class="tier-features">
-          <li>Real-time GEX Levels</li>
-          <li>Regime Engine Signals</li>
-          <li>IV Rank Scanner</li>
-          <li>Options Flow Feed</li>
-          <li>Expected Move Calculator</li>
-        </ul>
-      </div>
-      <div class="tier-card tier-highlight">
-        <div class="tier-name" style="color:var(--amber)">Institutional Desk</div>
-        <div class="tier-target">Hedge Fund PMs / Prop Desks</div>
-        <div class="tier-price-tag">$2,500</div>
-        <div class="tier-per">/month</div>
-        <ul class="tier-features">
-          <li>Everything in Pro</li>
-          <li>Net Vanna & Charm Analytics</li>
-          <li>Dealer Hedging Simulator</li>
-          <li>SVI Volatility Surfaces</li>
-          <li>Macro Regime Fusion Engine</li>
-          <li>Multi-expiry Greek Decomposition</li>
-        </ul>
-      </div>
-      <div class="tier-card">
-        <div class="tier-name" style="color:var(--violet)">Enterprise API</div>
-        <div class="tier-target">Quant Funds / HFTs</div>
-        <div class="tier-price-tag">$10k+</div>
-        <div class="tier-per">/month</div>
-        <ul class="tier-features">
-          <li>Everything in Institutional</li>
-          <li>Raw WebSocket Data Pipe</li>
-          <li>Net GEX Stream (sub-second)</li>
-          <li>ML Probability Signals</li>
-          <li>Python SDK: import powertrade</li>
-          <li>Custom SLA & Integrations</li>
-        </ul>
-      </div>
-    </div>
-  </div>`;
+  <div class="tab-panel" id="panel-xstocks">${buildXStocksPanel()}</div>`;
 }
 
 function buildXStocksPanel(){
