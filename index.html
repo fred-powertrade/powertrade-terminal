@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<base href="/terminal/"/>
-<title>KAITO — Institutional Crypto Risk Terminal</title>
+<title>PowerTrade — Institutional Crypto Risk Terminal</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -439,43 +438,82 @@ header{background:rgba(4,4,10,0.97);backdrop-filter:blur(24px);border-bottom:1px
 .tier-features{margin-top:12px;list-style:none;padding:0}
 .tier-features li{font-size:10px;color:var(--t2);padding:4px 0;border-bottom:1px solid rgba(19,19,37,.3);display:flex;align-items:center;gap:6px}
 .tier-features li::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--green);flex-shrink:0}
+
+/* ═══ PREDICTIVE SENTIMENT DELTA MAP ═══ */
+.sdm-container{position:relative;min-height:360px;padding:16px;overflow:hidden}
+.sdm-word{position:absolute;cursor:pointer;transition:all .3s;text-shadow:0 0 8px rgba(0,0,0,.5);font-weight:700;white-space:nowrap;user-select:none}
+.sdm-word:hover{transform:scale(1.15);z-index:10;filter:brightness(1.4)}
+.sdm-word .sdm-badge{position:absolute;top:-8px;right:-8px;font-size:6px;padding:1px 3px;border-radius:2px;font-weight:800;letter-spacing:.03em;pointer-events:none}
+.sdm-legend{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap}
+.sdm-legend-item{display:flex;align-items:center;gap:4px;font-size:8px;color:var(--t4)}
+.sdm-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sdm-cluster-label{position:absolute;font-size:7px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--t5);pointer-events:none}
+.sdm-delta-bar{display:flex;align-items:center;gap:6px;padding:4px 10px;font-size:9px}
+.sdm-delta-bar .bar{flex:1;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;position:relative}
+.sdm-delta-bar .fill{height:100%;border-radius:2px;position:absolute}
+
+/* ═══ ALPHA SCANNER ═══ */
+.alpha-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(19,19,37,.4);cursor:pointer;transition:background .1s}
+.alpha-row:hover{background:rgba(255,255,255,.018)}
+.alpha-row:last-child{border-bottom:none}
+.alpha-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;flex-shrink:0}
+.alpha-main{flex:1;min-width:0}
+.alpha-signal-name{font-size:11px;font-weight:700;color:var(--t1)}
+.alpha-signal-desc{font-size:9.5px;color:var(--t3);margin-top:1px;line-height:1.4}
+.alpha-metrics{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.alpha-metric{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:8px;font-family:'Space Mono',monospace}
+.alpha-conf{display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:2px}
+.alpha-conf-val{font-size:14px;font-weight:900;font-family:'Space Mono',monospace}
+.alpha-conf-label{font-size:7px;color:var(--t4);text-transform:uppercase;letter-spacing:.04em}
+.alpha-signal-badge{font-size:8px;font-weight:800;padding:3px 8px;border-radius:4px;border:1px solid;letter-spacing:.03em;display:inline-flex;align-items:center;gap:3px;margin-right:6px}
+
+/* ═══ STRESS TEST CALCULATOR ═══ */
+.stress-panel{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-bottom:14px}
+.stress-scenarios{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px}
+.stress-scenario{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:12px;cursor:pointer;transition:all .15s;text-align:center}
+.stress-scenario:hover{border-color:var(--border3);transform:translateY(-1px)}
+.stress-scenario.active{border-color:rgba(255,56,96,.4);background:rgba(255,56,96,.04)}
+.stress-scenario .icon{font-size:16px;margin-bottom:4px}
+.stress-scenario .name{font-size:10px;font-weight:700;color:var(--t1);margin-bottom:2px}
+.stress-scenario .drop{font-size:11px;font-weight:800;font-family:'Space Mono',monospace;color:var(--red)}
+.stress-scenario .date{font-size:8px;color:var(--t4)}
+.stress-slider-wrap{padding:14px;border-top:1px solid var(--border)}
+.stress-slider-wrap label{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.stress-slider-wrap input[type=range]{width:100%;accent-color:#ff3860;cursor:pointer;margin-top:4px}
+.stress-portfolio{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:14px;border-top:1px solid var(--border)}
+.stress-asset{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;align-items:center;justify-content:space-between}
+.stress-asset .left{display:flex;align-items:center;gap:8px}
+.stress-asset .sym{font-weight:800;font-size:12px}
+.stress-asset .weight{font-size:9px;color:var(--t3)}
+.stress-asset .impact{text-align:right}
+.stress-asset .new-price{font-size:11px;font-weight:700;font-family:'Space Mono',monospace}
+.stress-asset .pnl{font-size:10px;font-weight:700;font-family:'Space Mono',monospace}
+.stress-asset .iv-impact{font-size:8px;color:var(--violet);margin-top:2px}
+.stress-total{padding:14px;border-top:1px solid var(--border);background:linear-gradient(135deg,rgba(255,56,96,.04),rgba(168,85,247,.04));text-align:center}
+.stress-total .big{font-size:24px;font-weight:900;font-family:'Space Mono',monospace}
+.stress-total .sub{font-size:10px;color:var(--t3);margin-top:4px;line-height:1.5}
+
+/* ═══ SPOT MODE ENHANCEMENTS ═══ */
+.spot-hype-meter{display:flex;align-items:center;gap:6px;padding:5px 12px;border-bottom:1px solid rgba(19,19,37,.3)}
+.spot-hype-meter:last-child{border-bottom:none}
+.spot-hype-meter .sym{font-weight:700;font-size:10.5px;width:46px}
+.spot-hype-meter .meter-wrap{flex:1;display:flex;align-items:center;gap:4px}
+.spot-hype-meter .meter{flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;position:relative}
+.spot-hype-meter .meter-fill{height:100%;border-radius:3px;position:absolute}
+.spot-hype-meter .score{font-family:'Space Mono',monospace;font-size:10px;width:35px;text-align:right;font-weight:700}
+.spot-hype-meter .trend{font-size:8px;width:40px;text-align:right;font-weight:600}
 </style>
 </head>
 <body>
 
-<!-- ═══ LOGIN SCREEN (KAITO) ═══ -->
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-brand">
-      <h1>KAITO</h1>
-      <p>Institutional Crypto Risk Terminal</p>
-    </div>
-    <div class="login-field">
-      <label>Username</label>
-      <input type="text" id="login-user" placeholder="Enter username" autocomplete="off"/>
-    </div>
-    <div class="login-field">
-      <label>Password</label>
-      <input type="password" id="login-pass" placeholder="Enter password" autocomplete="off"/>
-    </div>
-    <button class="login-btn" onclick="doLogin()">ACCESS TERMINAL</button>
-    <div class="login-error" id="login-error"></div>
-    <div class="login-tier-info">
-      <div class="login-tier"><span class="tier-name">Pro Trader</span><span class="tier-price">$199/mo</span></div>
-      <div class="login-tier"><span class="tier-name">Institutional Desk</span><span class="tier-price">$2,500/mo</span></div>
-      <div class="login-tier"><span class="tier-name">Enterprise API</span><span class="tier-price">$10k+/mo</span></div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MAIN APP (hidden until login) ═══ -->
-<div id="app" style="display:none">
+<!-- ═══ MAIN APP ═══ -->
+<div id="app">
 
 <!-- ═══ HEADER ═══ -->
 <header><div class="container"><div class="hdr">
   <div class="logo">
-    <div class="logo-m">K</div>
-    <div><h1><b>KAITO</b></h1><p>Risk Intelligence Terminal</p></div>
+    <div class="logo-m">PT</div>
+    <div><h1><b>PowerTrade</b></h1><p>Risk Intelligence Terminal</p></div>
   </div>
 
   <!-- Mode Toggle -->
@@ -550,7 +588,7 @@ header{background:rgba(4,4,10,0.97);backdrop-filter:blur(24px);border-bottom:1px
 
 <!-- Footer -->
 <div style="text-align:center;padding:20px;font-size:8.5px;color:var(--t5);border-top:1px solid var(--border);margin-top:20px">
-  KAITO Risk Intelligence Terminal v6.0 · Institutional Alpha Engine · Data: CoinGecko · Deribit · Binance WS · Alternative.me · CryptoCompare<br/>
+  PowerTrade Risk Intelligence Terminal v7.0 · Alpha Generation Platform · Data: CoinGecko · Deribit · Binance WS · Alternative.me · CryptoCompare · X Velocity · Google Trends<br/>
   <a href="https://power.trade" target="_blank">power.trade</a> · <a href="https://power.trade/en/market-insights" target="_blank">Market Insights</a> · Not Financial Advice
 </div>
 
@@ -560,30 +598,9 @@ header{background:rgba(4,4,10,0.97);backdrop-filter:blur(24px);border-bottom:1px
 <!--  JAVASCRIPT ENGINE                                             -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <script>
-// ═══ LOGIN / AUTH ═══════════════════════════════════════════════
-function doLogin(){
-  const u=document.getElementById('login-user').value.trim();
-  const p=document.getElementById('login-pass').value.trim();
-  if(u==='admin'&&p==='admin'){
-    localStorage.setItem('kaito_session',JSON.stringify({user:u,ts:Date.now()}));
-    showApp();
-  } else {
-    document.getElementById('login-error').textContent='Invalid credentials. Try admin / admin';
-  }
-}
+// ═══ BOOT (no login) ═══════════════════════════════════════════
 function showApp(){
-  const ls=document.getElementById('login-screen');
-  ls.classList.add('hidden');
-  setTimeout(()=>{ls.style.display='none'},400);
-  document.getElementById('app').style.display='block';
   initApp();
-}
-function checkSession(){
-  const s=localStorage.getItem('kaito_session');
-  if(s){try{const d=JSON.parse(s);if(Date.now()-d.ts<86400000*7){showApp();return;}}catch(e){}}
-  document.getElementById('login-screen').style.display='flex';
-  document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
-  document.getElementById('login-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('login-pass').focus()});
 }
 
 // ═══ MODE STATE ═══════════════════════════════════════════════
@@ -1458,21 +1475,245 @@ function updateIVRatios(){
 }
 
 
+// ═══════════════════════════════════════════════════════════════════
+// PREDICTIVE SENTIMENT DELTA MAP ENGINE
+// ═══════════════════════════════════════════════════════════════════
+const SENTIMENT_WORDS = [];
+const SENTIMENT_CATEGORIES = {
+  Regulatory: ['SEC','regulation','ETF','approval','compliance','lawsuit','ban','CFTC','MiCA','enforcement'],
+  Liquidity: ['liquidity','volume','whale','inflow','outflow','exchange','deposit','withdrawal','TVL','reserves'],
+  Technical: ['breakout','support','resistance','RSI','MACD','golden cross','death cross','wedge','triangle','divergence'],
+  Macro: ['Fed','rate cut','inflation','CPI','treasury','dollar','recession','employment','GDP','tariff'],
+  Sentiment: ['fear','greed','FOMO','FUD','capitulation','euphoria','accumulation','distribution','bottom','top'],
+  DeFi: ['yield','staking','airdrop','governance','bridge','exploit','hack','TVL','lending','DEX']
+};
+
+function generateSentimentWords(){
+  SENTIMENT_WORDS.length=0;
+  const allWords=[];
+  for(const[cat,words]of Object.entries(SENTIMENT_CATEGORIES)){
+    for(const w of words){
+      const seed=w.charCodeAt(0)*17+w.charCodeAt(1||0)*31+(w.charCodeAt(2)||0)*13;
+      // Simulated X Mention Velocity (tweets/hour normalized 0-100)
+      const xVelocity=Math.floor(sr(seed,50)*85+15);
+      // Simulated Google Trends Search Index (0-100)
+      const googleTrends=Math.floor(sr(seed,51)*70+10);
+      // Sentiment Delta = X Velocity / Google Trends (>1.5 = smart money lead)
+      const sentimentDelta=+(xVelocity/Math.max(1,googleTrends)).toFixed(2);
+      // Open Interest impact (normalized)
+      const oiImpact=sr(seed,52)*80+10;
+      // Momentum: velocity of change over last period
+      const momentum=+((sr(seed,53)-0.45)*2).toFixed(2);
+      // Polarity: positive/negative/neutral
+      const polarity=sr(seed,54)>0.6?'positive':sr(seed,54)<0.35?'negative':'neutral';
+      allWords.push({word:w,category:cat,xVelocity,googleTrends,sentimentDelta,oiImpact,momentum,polarity,seed});
+    }
+  }
+  // Sort by activity & pick top items
+  allWords.sort((a,b)=>(b.xVelocity+b.oiImpact)-(a.xVelocity+a.oiImpact));
+  SENTIMENT_WORDS.push(...allWords.slice(0,40));
+}
+generateSentimentWords();
+
+// ═══════════════════════════════════════════════════════════════════
+// ALPHA SCANNER ENGINE — Inertia & Divergence
+// ═══════════════════════════════════════════════════════════════════
+function runAlphaScanner(){
+  const signals=[];
+  const tokens=[...D].filter(t=>t.mc>200e6);
+
+  for(const t of tokens){
+    // 1) Volume/Social Divergence: falling price but rising social sentiment
+    const priceFalling=t.ch24h<-2;
+    const socialRising=t.sent>55;
+    const sentDelta=t.sent/50; // normalized above 1 = positive sentiment
+    if(priceFalling&&socialRising){
+      const conf=Math.min(95,Math.floor(Math.abs(t.ch24h)*3+sentDelta*15+sr(t.seed,60)*10));
+      signals.push({
+        token:t.s,name:t.n,type:'DIVERGENCE',
+        signal:'BULLISH DIVERGENCE',
+        desc:`Price ${fP(t.ch24h)} but social sentiment at ${t.sent}/100 — potential accumulation zone.`,
+        confidence:conf,color:'var(--green)',
+        metrics:[
+          {l:'Price',v:fP(t.ch24h),c:t.ch24h>=0?'var(--green)':'var(--red)'},
+          {l:'Sentiment',v:t.sent,c:t.sent>55?'var(--green)':'var(--red)'},
+          {l:'Delta',v:sentDelta.toFixed(2),c:'var(--cyan)'}
+        ],
+        priority:conf
+      });
+    }
+
+    // 2) Whale Exchange Flow: large inflow/outflow relative to 30d avg volume
+    const flowRatio=t.liq/(t.vol*0.01+1); // simulated whale flow ratio
+    const isLargeInflow=flowRatio>1.5&&t.lsRatio>1.2;
+    const isLargeOutflow=flowRatio>1.5&&t.lsRatio<0.8;
+    if(isLargeInflow||isLargeOutflow){
+      const direction=isLargeInflow?'INFLOW':'OUTFLOW';
+      const bullBear=isLargeInflow?'BEARISH':'BULLISH';
+      const conf=Math.min(90,Math.floor(flowRatio*20+sr(t.seed,61)*15));
+      signals.push({
+        token:t.s,name:t.n,type:'WHALE_FLOW',
+        signal:`WHALE ${direction}`,
+        desc:`Large ${direction.toLowerCase()} detected — ${flowRatio.toFixed(1)}x normal. ${isLargeInflow?'Potential sell pressure.':'Potential accumulation.'}`,
+        confidence:conf,color:isLargeInflow?'var(--red)':'var(--green)',
+        metrics:[
+          {l:'Flow',v:flowRatio.toFixed(1)+'x',c:isLargeInflow?'var(--red)':'var(--green)'},
+          {l:'L/S',v:t.lsRatio.toFixed(2),c:t.lsRatio>1?'var(--green)':'var(--red)'},
+          {l:'Bias',v:bullBear,c:bullBear==='BULLISH'?'var(--green)':'var(--red)'}
+        ],
+        priority:conf
+      });
+    }
+
+    // 3) Funding Rate Anomalies: extremely negative funding + rising social = short squeeze risk
+    if(t.fund<-0.01&&sentDelta>1.2){
+      const squeezeConf=Math.min(98,Math.floor(Math.abs(t.fund)*1500+sentDelta*20+sr(t.seed,62)*8));
+      signals.push({
+        token:t.s,name:t.n,type:'SQUEEZE',
+        signal:'SHORT SQUEEZE RISK',
+        desc:`Funding at ${(t.fund*100).toFixed(3)}% (extremely negative) with rising social mentions — squeeze probability elevated.`,
+        confidence:squeezeConf,color:'var(--amber)',
+        metrics:[
+          {l:'Funding',v:(t.fund*100).toFixed(3)+'%',c:'var(--red)'},
+          {l:'Social',v:sentDelta.toFixed(2)+'x',c:'var(--green)'},
+          {l:'OI',v:fmt(t.oi),c:'var(--cyan)'}
+        ],
+        priority:squeezeConf+10 // boost squeeze signals
+      });
+    }
+
+    // 4) Extremely positive funding + negative social = long squeeze risk
+    if(t.fund>0.03&&sentDelta<0.8){
+      const squeezeConf=Math.min(95,Math.floor(t.fund*1200+sr(t.seed,63)*12));
+      signals.push({
+        token:t.s,name:t.n,type:'SQUEEZE',
+        signal:'LONG SQUEEZE RISK',
+        desc:`Funding at +${(t.fund*100).toFixed(3)}% (crowded longs) with fading social — cascade risk.`,
+        confidence:squeezeConf,color:'var(--red)',
+        metrics:[
+          {l:'Funding',v:'+'+( t.fund*100).toFixed(3)+'%',c:'var(--amber)'},
+          {l:'Social',v:sentDelta.toFixed(2)+'x',c:'var(--red)'},
+          {l:'L/S',v:t.lsRatio.toFixed(2),c:t.lsRatio>1.3?'var(--red)':'var(--t3)'}
+        ],
+        priority:squeezeConf+5
+      });
+    }
+
+    // 5) IV Mispricing + Volume surge
+    const ivRvSpread=t.iv-t.rv30;
+    if(Math.abs(ivRvSpread)>8&&t.vol>t.mc*0.08){
+      const isOverpriced=ivRvSpread>0;
+      const conf=Math.min(92,Math.floor(Math.abs(ivRvSpread)*2+sr(t.seed,64)*10));
+      signals.push({
+        token:t.s,name:t.n,type:'IV_MISPRICE',
+        signal:isOverpriced?'IV OVERPRICED':'IV UNDERPRICED',
+        desc:`IV-RV spread at ${ivRvSpread>=0?'+':''}${ivRvSpread.toFixed(1)}% with ${fmt(t.vol)} daily volume. ${isOverpriced?'Sell vol opportunity.':'Buy vol opportunity.'}`,
+        confidence:conf,color:isOverpriced?'var(--red)':'var(--green)',
+        metrics:[
+          {l:'IV',v:t.iv+'%',c:'var(--amber)'},
+          {l:'RV30',v:t.rv30+'%',c:'var(--t2)'},
+          {l:'Spread',v:(ivRvSpread>=0?'+':'')+ivRvSpread.toFixed(1)+'%',c:isOverpriced?'var(--red)':'var(--green)'}
+        ],
+        priority:conf
+      });
+    }
+  }
+
+  signals.sort((a,b)=>b.priority-a.priority);
+  return signals.slice(0,15);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// STRESS TEST CALCULATOR — Scenario Replays + IV Impact
+// ═══════════════════════════════════════════════════════════════════
+const STRESS_SCENARIOS=[
+  {id:'ftx',name:'FTX Collapse',icon:'💀',spotDrop:-35,ivSpike:80,date:'Nov 2022',desc:'Exchange insolvency cascade'},
+  {id:'luna',name:'LUNA De-peg',icon:'🌙',spotDrop:-45,ivSpike:120,date:'May 2022',desc:'Algorithmic stablecoin death spiral'},
+  {id:'covid',name:'COVID Crash',icon:'🦠',spotDrop:-50,ivSpike:150,date:'Mar 2020',desc:'Global risk-off panic'},
+  {id:'china',name:'China Ban',icon:'🚫',spotDrop:-25,ivSpike:45,date:'Sep 2021',desc:'Regulatory crackdown'}
+];
+const STRESS_PORTFOLIO={BTC:0.40,ETH:0.25,SOL:0.15,LINK:0.10,AVAX:0.10};
+let stressScenario='ftx';
+let stressCustomPct=-30;
+
+function calcStressTest(scenarioId,customPct){
+  const scenario=STRESS_SCENARIOS.find(s=>s.id===scenarioId)||STRESS_SCENARIOS[0];
+  const spotDrop=customPct!=null?customPct:scenario.spotDrop;
+  const ivMultiplier=1+(Math.abs(spotDrop)/scenario.spotDrop*scenario.ivSpike/100)||1.5;
+  const results={assets:[],totalPnL:0,portfolioValue:100000,scenario};
+
+  for(const[sym,weight]of Object.entries(STRESS_PORTFOLIO)){
+    const t=D.find(d=>d.s===sym);if(!t)continue;
+    const currentPrice=t.p;
+    // Apply asymmetric stress — alts drop more than BTC
+    const betaMultiplier=sym==='BTC'?1.0:sym==='ETH'?1.15:1.35;
+    const assetDrop=spotDrop*betaMultiplier/100;
+    const stressedPrice=currentPrice*(1+assetDrop);
+    const positionValue=results.portfolioValue*weight;
+    const pnl=positionValue*assetDrop;
+
+    // IV expansion under stress (inverse relationship to price)
+    const currentIV=t.iv;
+    const stressedIV=Math.min(250,currentIV*ivMultiplier);
+    const ivChange=stressedIV-currentIV;
+
+    // Vega impact: how much the option position changes due to IV spike
+    // Approximate vega per $1000 notional for 30DTE ATM option
+    const T=30/365;
+    const vegaPerNotional=currentPrice*normPDF(0)*Math.sqrt(T)*(t.iv/100)*0.01;
+    const vegaImpact=vegaPerNotional*ivChange*positionValue/currentPrice;
+
+    // Delta-adjusted value change
+    const deltaAdj=pnl+vegaImpact*0.3; // partial vega offset
+
+    results.assets.push({
+      sym,weight,currentPrice,stressedPrice,
+      pnl,pnlPct:assetDrop*100,
+      stressedIV:+stressedIV.toFixed(1),
+      ivChange:+ivChange.toFixed(1),
+      vegaImpact:+vegaImpact.toFixed(0),
+      deltaAdj:+deltaAdj.toFixed(0)
+    });
+    results.totalPnL+=deltaAdj;
+  }
+  results.totalPnLPct=+(results.totalPnL/results.portfolioValue*100).toFixed(2);
+  return results;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SPOT MODE — Retail Hype Score Calculator
+// ═══════════════════════════════════════════════════════════════════
+function calcHypeScore(t){
+  // Combine social sentiment, volume spike, and price momentum for a "retail hype" score
+  const volSpike=Math.min(30,t.vol/(t.mc*0.05)*10);
+  const sentimentScore=t.sent*0.4;
+  const momentumScore=Math.min(20,Math.abs(t.ch24h)*1.5);
+  const hype=Math.min(100,Math.floor(volSpike+sentimentScore+momentumScore));
+  const trend=t.ch1h>0.5?'RISING':t.ch1h<-0.5?'FALLING':'FLAT';
+  return{hype,trend};
+}
+
 // ═══ TAB / PANEL BUILDER ═══════════════════════════════════════
 function buildTabs(){
   const el=document.getElementById('main-tabs-inner');if(!el)return;
   if(currentMode==='spot'){
     el.innerHTML=`
       <div class="mtab active" onclick="switchTab('dashboard')">Dashboard</div>
+      <div class="mtab" onclick="switchTab('sentiment')">Sentiment Map</div>
+      <div class="mtab" onclick="switchTab('alpha')">Alpha Scanner</div>
       <div class="mtab" onclick="switchTab('funding')">Funding & Liqs</div>
       <div class="mtab" onclick="switchTab('scanner')">Scanner</div>
+      <div class="mtab" onclick="switchTab('stresstest')">Stress Test</div>
       <div class="mtab" onclick="switchTab('intel')">Intel</div>
       <div class="mtab" onclick="switchTab('pricing')">Plans</div>`;
   } else {
     el.innerHTML=`
       <div class="mtab active" onclick="switchTab('signals')">Signal Feed</div>
+      <div class="mtab" onclick="switchTab('sentiment')">Sentiment Map</div>
+      <div class="mtab" onclick="switchTab('alpha')">Alpha Scanner</div>
       <div class="mtab" onclick="switchTab('greeks')">Vanna & Charm</div>
       <div class="mtab" onclick="switchTab('simulator')">Dealer Simulator</div>
+      <div class="mtab" onclick="switchTab('stresstest')">Stress Test</div>
       <div class="mtab" onclick="switchTab('optionslab')">Options Lab</div>
       <div class="mtab" onclick="switchTab('positioning')">Positioning</div>
       <div class="mtab" onclick="switchTab('fairvalue')">Fair Value</div>
@@ -1517,6 +1758,17 @@ function buildSpotPanels(){
         <div class="card-b" id="fg-widget" style="display:flex;flex-direction:column;align-items:center;gap:6px"></div>
       </div>
     </div>
+    <!-- Spot-specific: Retail Hype Score + Trend Following Signals -->
+    <div class="g2 mb">
+      <div class="card">
+        <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--pink)"></span>Retail Hype Score (X/Google)</div><span class="badge b-amber">SPOT</span></div>
+        <div class="card-bnp scroll-sm" id="spot-hype-body"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--green)"></span>Trend Following / Breakout Signals</div><span class="badge b-green">SPOT</span></div>
+        <div class="card-bnp scroll-sm" id="spot-breakout-body"></div>
+      </div>
+    </div>
     <div class="detail-panel" id="detail-panel" style="position:relative"></div>
     <div class="g2 mb">
       <div class="card">
@@ -1531,6 +1783,118 @@ function buildSpotPanels(){
       <div class="card">
         <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--pink)"></span>News</div><span class="badge b-cyan">LIVE</span></div>
         <div class="card-bnp scroll-md" id="news-dash"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPOT: Sentiment Map (shared) -->
+  <div class="tab-panel" id="panel-sentiment">
+    <div style="padding-top:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="section-title">Predictive Sentiment Delta Map — X Velocity vs Google Trends</div>
+        <span class="badge b-amber">ALPHA V2</span>
+      </div>
+      <div class="card mb">
+        <div class="card-h">
+          <div class="card-t"><span class="dot" style="background:var(--amber)"></span>Sentiment Wordmap</div>
+          <div class="pills">
+            <span class="pill act" onclick="setSDMView('all',this)">All</span>
+            <span class="pill" onclick="setSDMView('Regulatory',this)">Regulatory</span>
+            <span class="pill" onclick="setSDMView('Liquidity',this)">Liquidity</span>
+            <span class="pill" onclick="setSDMView('Technical',this)">Technical</span>
+            <span class="pill" onclick="setSDMView('Macro',this)">Macro</span>
+          </div>
+        </div>
+        <div class="card-bnp"><div class="sdm-container" id="sdm-wordmap"></div></div>
+        <div style="padding:8px 14px;border-top:1px solid var(--border)">
+          <div class="sdm-legend">
+            <div class="sdm-legend-item"><div class="sdm-legend-dot" style="background:var(--green)"></div>Positive</div>
+            <div class="sdm-legend-item"><div class="sdm-legend-dot" style="background:var(--red)"></div>Negative</div>
+            <div class="sdm-legend-item"><div class="sdm-legend-dot" style="background:var(--t3)"></div>Neutral</div>
+            <div class="sdm-legend-item" style="margin-left:12px"><span style="font-size:7px">SIZE = OI Impact</span></div>
+            <div class="sdm-legend-item"><span style="font-size:7px">BRIGHTNESS = Momentum</span></div>
+            <div class="sdm-legend-item"><span style="font-size:7px">GLOW = Smart Money Lead (Delta &gt; 1.5)</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="g2 mb">
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--cyan)"></span>X Velocity vs Google Trends — Top Divergences</div></div>
+          <div class="card-bnp scroll-sm" id="sdm-delta-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Category Sentiment Breakdown</div></div>
+          <div class="card-bnp scroll-sm" id="sdm-category-breakdown"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPOT: Alpha Scanner (shared) -->
+  <div class="tab-panel" id="panel-alpha">
+    <div style="padding-top:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="section-title">Alpha Scanner — Inertia & Divergence Signals</div>
+        <span class="badge b-green">LIVE SCAN</span>
+      </div>
+      <div class="card mb">
+        <div class="card-h">
+          <div class="card-t"><span class="dot" style="background:var(--green)"></span>Active Signals</div>
+          <div class="pills">
+            <span class="pill act" onclick="setAlphaFilter('all',this)">All</span>
+            <span class="pill" onclick="setAlphaFilter('DIVERGENCE',this)">Divergence</span>
+            <span class="pill" onclick="setAlphaFilter('WHALE_FLOW',this)">Whale Flow</span>
+            <span class="pill" onclick="setAlphaFilter('SQUEEZE',this)">Squeeze</span>
+            <span class="pill" onclick="setAlphaFilter('IV_MISPRICE',this)">IV Misprice</span>
+          </div>
+        </div>
+        <div class="card-bnp scroll-md" id="alpha-scanner-body"></div>
+      </div>
+      <div class="g3 mb">
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--red)"></span>Short Squeeze Watch</div></div>
+          <div class="card-bnp scroll-sm" id="alpha-squeeze-watch"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--cyan)"></span>Volume/Social Divergence</div></div>
+          <div class="card-bnp scroll-sm" id="alpha-divergence-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Whale Flow Tracker</div></div>
+          <div class="card-bnp scroll-sm" id="alpha-whale-flow"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPOT: Stress Test Calculator -->
+  <div class="tab-panel" id="panel-stresstest">
+    <div style="padding-top:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="section-title">Stress Test Calculator — Scenario Replays + Tail Risk</div>
+        <span class="badge b-red">RISK</span>
+      </div>
+      <div class="stress-panel">
+        <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--red)"></span>Black Swan Scenario Replays</div><span class="badge b-red">HISTORICAL</span></div>
+        <div class="stress-scenarios" id="stress-scenarios"></div>
+        <div class="stress-slider-wrap">
+          <label>Custom Drawdown <span class="sim-val" id="stress-slider-val" style="color:var(--red)">-30%</span></label>
+          <input type="range" id="stress-slider" min="-80" max="0" value="-30" step="1" oninput="updateStressTest()"/>
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--t4);margin-top:2px"><span>-80%</span><span>0%</span></div>
+        </div>
+        <div class="card-h" style="border-top:1px solid var(--border)"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Portfolio Impact — $100K Reference</div></div>
+        <div class="stress-portfolio" id="stress-portfolio"></div>
+        <div class="stress-total" id="stress-total"></div>
+      </div>
+      <div class="g2 mb">
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>IV Impact Prediction ($Vega$)</div></div>
+          <div class="card-b" id="stress-iv-impact" style="font-size:11px;color:var(--t2);line-height:1.7"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--amber)"></span>Scenario Comparison</div></div>
+          <div class="card-bnp scroll-sm" id="stress-comparison"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1608,12 +1972,12 @@ function buildOptionsPanels(){
   <!-- OPTIONS: Signal Feed -->
   <div class="tab-panel active" id="panel-signals">
     <div class="ai-search-wrap">
-      <span class="ai-icon">K</span>
-      <input class="ai-search" id="ai-input" type="text" placeholder="Ask KAITO AI: 'Where is dealer hedging pressure?' · 'Best Vanna trade?'" />
+      <span class="ai-icon">PT</span>
+      <input class="ai-search" id="ai-input" type="text" placeholder="Ask PowerTrade AI: 'Where is dealer hedging pressure?' · 'Best Vanna trade?'" />
       <div class="ai-kbd"><span class="tag tag-sym">ENTER</span></div>
     </div>
     <div class="ai-response" id="ai-response">
-      <div class="thinking" id="ai-thinking">KAITO AI is analyzing…</div>
+      <div class="thinking" id="ai-thinking">PowerTrade AI is analyzing…</div>
       <div id="ai-text"></div>
     </div>
     <div class="regime-panel mb" id="regime-panel" style="border-color:var(--border)">
@@ -1639,6 +2003,118 @@ function buildOptionsPanels(){
     <div style="margin-top:20px;opacity:.6">
       <div class="section-title" style="font-size:9px;color:var(--t4)">Max Pain — Reference Only</div>
       <div class="mp-grid" id="max-pain-grid"></div>
+    </div>
+  </div>
+
+  <!-- OPTIONS: Sentiment Map (shared) -->
+  <div class="tab-panel" id="panel-sentiment">
+    <div style="padding-top:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="section-title">Predictive Sentiment Delta Map — Fear/Greed vs Put-Call Ratios</div>
+        <span class="badge b-amber">ALPHA V2</span>
+      </div>
+      <div class="card mb">
+        <div class="card-h">
+          <div class="card-t"><span class="dot" style="background:var(--amber)"></span>Sentiment Wordmap</div>
+          <div class="pills">
+            <span class="pill act" onclick="setSDMView('all',this)">All</span>
+            <span class="pill" onclick="setSDMView('Regulatory',this)">Regulatory</span>
+            <span class="pill" onclick="setSDMView('Liquidity',this)">Liquidity</span>
+            <span class="pill" onclick="setSDMView('Technical',this)">Technical</span>
+            <span class="pill" onclick="setSDMView('Macro',this)">Macro</span>
+          </div>
+        </div>
+        <div class="card-bnp"><div class="sdm-container" id="sdm-wordmap"></div></div>
+        <div style="padding:8px 14px;border-top:1px solid var(--border)">
+          <div class="sdm-legend">
+            <div class="sdm-legend-item"><div class="sdm-legend-dot" style="background:var(--green)"></div>Positive</div>
+            <div class="sdm-legend-item"><div class="sdm-legend-dot" style="background:var(--red)"></div>Negative</div>
+            <div class="sdm-legend-item"><div class="sdm-legend-dot" style="background:var(--t3)"></div>Neutral</div>
+            <div class="sdm-legend-item" style="margin-left:12px"><span style="font-size:7px">SIZE = OI Impact</span></div>
+            <div class="sdm-legend-item"><span style="font-size:7px">BRIGHTNESS = Momentum</span></div>
+            <div class="sdm-legend-item"><span style="font-size:7px">GLOW = Smart Money Lead (Delta &gt; 1.5)</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="g2 mb">
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--cyan)"></span>X Velocity vs Google Trends — Top Divergences</div></div>
+          <div class="card-bnp scroll-sm" id="sdm-delta-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Category Sentiment Breakdown</div></div>
+          <div class="card-bnp scroll-sm" id="sdm-category-breakdown"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTIONS: Alpha Scanner (shared) -->
+  <div class="tab-panel" id="panel-alpha">
+    <div style="padding-top:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="section-title">Alpha Scanner — Mean Reversion / Volatility Crushing</div>
+        <span class="badge b-green">LIVE SCAN</span>
+      </div>
+      <div class="card mb">
+        <div class="card-h">
+          <div class="card-t"><span class="dot" style="background:var(--green)"></span>Active Signals</div>
+          <div class="pills">
+            <span class="pill act" onclick="setAlphaFilter('all',this)">All</span>
+            <span class="pill" onclick="setAlphaFilter('DIVERGENCE',this)">Divergence</span>
+            <span class="pill" onclick="setAlphaFilter('WHALE_FLOW',this)">Whale Flow</span>
+            <span class="pill" onclick="setAlphaFilter('SQUEEZE',this)">Squeeze</span>
+            <span class="pill" onclick="setAlphaFilter('IV_MISPRICE',this)">IV Misprice</span>
+          </div>
+        </div>
+        <div class="card-bnp scroll-md" id="alpha-scanner-body"></div>
+      </div>
+      <div class="g3 mb">
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--red)"></span>Short Squeeze Watch</div></div>
+          <div class="card-bnp scroll-sm" id="alpha-squeeze-watch"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--cyan)"></span>Volume/Social Divergence</div></div>
+          <div class="card-bnp scroll-sm" id="alpha-divergence-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Whale Flow Tracker</div></div>
+          <div class="card-bnp scroll-sm" id="alpha-whale-flow"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTIONS: Stress Test Calculator -->
+  <div class="tab-panel" id="panel-stresstest">
+    <div style="padding-top:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="section-title">Stress Test Calculator — IV Impact + Vega Prediction</div>
+        <span class="badge b-red">RISK</span>
+      </div>
+      <div class="stress-panel">
+        <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--red)"></span>Black Swan Scenario Replays</div><span class="badge b-red">HISTORICAL</span></div>
+        <div class="stress-scenarios" id="stress-scenarios"></div>
+        <div class="stress-slider-wrap">
+          <label>Custom Drawdown <span class="sim-val" id="stress-slider-val" style="color:var(--red)">-30%</span></label>
+          <input type="range" id="stress-slider" min="-80" max="0" value="-30" step="1" oninput="updateStressTest()"/>
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--t4);margin-top:2px"><span>-80%</span><span>0%</span></div>
+        </div>
+        <div class="card-h" style="border-top:1px solid var(--border)"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Portfolio Impact — $100K Reference</div></div>
+        <div class="stress-portfolio" id="stress-portfolio"></div>
+        <div class="stress-total" id="stress-total"></div>
+      </div>
+      <div class="g2 mb">
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>IV Impact Prediction ($Vega$)</div></div>
+          <div class="card-b" id="stress-iv-impact" style="font-size:11px;color:var(--t2);line-height:1.7"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--amber)"></span>Scenario Comparison</div></div>
+          <div class="card-bnp scroll-sm" id="stress-comparison"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1778,7 +2254,7 @@ function buildOptionsPanels(){
 function buildPricingPanel(){
   return `<div style="padding-top:14px">
     <div class="section-title" style="margin-bottom:6px">Strategic Pricing — B2B Risk Infrastructure</div>
-    <div style="font-size:11px;color:var(--t3);margin-bottom:16px;line-height:1.6">Stop selling B2C SaaS. Start selling B2B Risk Infrastructure. KAITO delivers institutional-grade dealer exposure analytics.</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:16px;line-height:1.6">Stop selling B2C SaaS. Start selling B2B Risk Infrastructure. PowerTrade delivers institutional-grade dealer exposure analytics.</div>
     <div class="tier-grid">
       <div class="tier-card">
         <div class="tier-name" style="color:var(--cyan)">Pro Trader</div>
@@ -1817,7 +2293,7 @@ function buildPricingPanel(){
           <li>Raw WebSocket Data Pipe</li>
           <li>Net GEX Stream (sub-second)</li>
           <li>ML Probability Signals</li>
-          <li>Python SDK: import kaito</li>
+          <li>Python SDK: import powertrade</li>
           <li>Custom SLA & Integrations</li>
         </ul>
       </div>
@@ -1835,15 +2311,34 @@ function renderMkt(){
   const avgIVR=D.filter(t=>t.mc>1e9).reduce((s,t)=>s+t.ivRank,0)/Math.max(1,D.filter(t=>t.mc>1e9).length);
   const avgFund=D.filter(t=>t.mc>500e6).reduce((s,t)=>s+t.fund,0)/Math.max(1,D.filter(t=>t.mc>500e6).length);
   const fgVal=LiveData.fgIndex!=null?LiveData.fgIndex:Math.floor(D.reduce((s,t)=>s+t.sent,0)/D.length);
-  el.innerHTML=[
-    {l:"BTC",v:fPr(btc.p||0),c:`class="${cCls(btc.ch24h||0)}"`,sub:fP(btc.ch24h||0)},
-    {l:"ETH",v:fPr(eth.p||0),c:`class="${cCls(eth.ch24h||0)}"`,sub:fP(eth.ch24h||0)},
-    {l:"Total MCap",v:fmt(totalMC),c:'style="color:var(--t2)"',sub:""},
-    {l:"24H Volume",v:fmt(totalVol),c:'style="color:var(--cyan)"',sub:""},
-    {l:"Avg IV Rank",v:`${avgIVR.toFixed(0)}%`,c:`style="color:${avgIVR<30?"var(--green)":avgIVR>70?"var(--red)":"var(--amber)"}"`,sub:""},
-    {l:"Avg Funding",v:`${(avgFund*100).toFixed(3)}%`,c:`style="color:${Math.abs(avgFund)>.03?"var(--red)":"var(--green)"}"`,sub:""},
-    {l:"Fear & Greed",v:fgVal,c:`style="color:${fgVal<25?"var(--red)":fgVal>75?"var(--green)":"var(--amber)"}"`,sub:fgVal<25?"Extreme Fear":fgVal<45?"Fear":fgVal<55?"Neutral":fgVal<75?"Greed":"Extreme Greed"}
-  ].map(s=>`<div class="mkt-c"><div class="l">${s.l}</div><div class="v num-mono" ${s.c}>${s.v}</div>${s.sub?`<div class="c" ${s.c}>${s.sub}</div>`:''}</div>`).join('');
+
+  let items;
+  if(currentMode==='spot'){
+    // SPOT MODE: Price % Change, RSI, Volume, Hype focused
+    const avgRSI=D.filter(t=>t.mc>1e9).reduce((s,t)=>s+t.rsi,0)/Math.max(1,D.filter(t=>t.mc>1e9).length);
+    items=[
+      {l:"BTC",v:fPr(btc.p||0),c:`class="${cCls(btc.ch24h||0)}"`,sub:fP(btc.ch24h||0)},
+      {l:"ETH",v:fPr(eth.p||0),c:`class="${cCls(eth.ch24h||0)}"`,sub:fP(eth.ch24h||0)},
+      {l:"Total MCap",v:fmt(totalMC),c:'style="color:var(--t2)"',sub:""},
+      {l:"24H Volume",v:fmt(totalVol),c:'style="color:var(--cyan)"',sub:""},
+      {l:"BTC RSI",v:`${btc.rsi||50}`,c:`style="color:${(btc.rsi||50)>70?"var(--red)":(btc.rsi||50)<30?"var(--green)":"var(--amber)"}"`,sub:(btc.rsi||50)>70?"Overbought":(btc.rsi||50)<30?"Oversold":"Neutral"},
+      {l:"Avg Funding",v:`${(avgFund*100).toFixed(3)}%`,c:`style="color:${Math.abs(avgFund)>.03?"var(--red)":"var(--green)"}"`,sub:""},
+      {l:"Fear & Greed",v:fgVal,c:`style="color:${fgVal<25?"var(--red)":fgVal>75?"var(--green)":"var(--amber)"}"`,sub:fgVal<25?"Extreme Fear":fgVal<45?"Fear":fgVal<55?"Neutral":fgVal<75?"Greed":"Extreme Greed"}
+    ];
+  } else {
+    // OPTIONS MODE: IV, Term Structure, Skew, GEX focused
+    const pcr=D.filter(t=>t.mc>1e9).reduce((s,t)=>s+(t.skew25d<0?1:0),0)/Math.max(1,D.filter(t=>t.mc>1e9).length);
+    items=[
+      {l:"BTC",v:fPr(btc.p||0),c:`class="${cCls(btc.ch24h||0)}"`,sub:fP(btc.ch24h||0)},
+      {l:"ETH",v:fPr(eth.p||0),c:`class="${cCls(eth.ch24h||0)}"`,sub:fP(eth.ch24h||0)},
+      {l:"BTC IV",v:`${btc.iv||'—'}%`,c:`style="color:var(--amber)"`,sub:`Rank: ${btc.ivRank||'—'}%`},
+      {l:"Avg IV Rank",v:`${avgIVR.toFixed(0)}%`,c:`style="color:${avgIVR<30?"var(--green)":avgIVR>70?"var(--red)":"var(--amber)"}"`,sub:""},
+      {l:"BTC Skew",v:`${(btc.skew25d||0)>=0?'+':''}${btc.skew25d||0}`,c:`style="color:${(btc.skew25d||0)>2?"var(--green)":(btc.skew25d||0)<-2?"var(--red)":"var(--t2)"}"`,sub:"25Δ"},
+      {l:"Put Bias",v:`${(pcr*100).toFixed(0)}%`,c:`style="color:${pcr>0.6?"var(--red)":pcr<0.4?"var(--green)":"var(--t2)"}"`,sub:""},
+      {l:"Avg Funding",v:`${(avgFund*100).toFixed(3)}%`,c:`style="color:${Math.abs(avgFund)>.03?"var(--red)":"var(--green)"}"`,sub:""}
+    ];
+  }
+  el.innerHTML=items.map(s=>`<div class="mkt-c"><div class="l">${s.l}</div><div class="v num-mono" ${s.c}>${s.v}</div>${s.sub?`<div class="c" ${s.c}>${s.sub}</div>`:''}</div>`).join('');
   // Update header
   const hBTC=document.getElementById('h-btcprice');if(hBTC)hBTC.textContent=fPr(btc.p||0);
   const hETH=document.getElementById('h-ethprice');if(hETH)hETH.textContent=fPr(eth.p||0);
@@ -2130,6 +2625,321 @@ function renderOppScanner(){
       <div class="scan-score" style="color:${convColor(t.conviction)}">${t.conviction}</div></div>`).join('');
 }
 
+// ═══ PREDICTIVE SENTIMENT DELTA MAP RENDERERS ═══════════════════
+let sdmView='all';
+function setSDMView(v,el){sdmView=v;el.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('act'));el.classList.add('act');renderSentimentWordmap();renderSDMDeltaList();renderSDMCategoryBreakdown();}
+
+function renderSentimentWordmap(){
+  const el=document.getElementById('sdm-wordmap');if(!el)return;
+  let words=SENTIMENT_WORDS;
+  if(sdmView!=='all')words=words.filter(w=>w.category===sdmView);
+
+  // Cluster layout by category
+  const categoryPositions={
+    Regulatory:{cx:0.15,cy:0.25},Liquidity:{cx:0.50,cy:0.20},Technical:{cx:0.85,cy:0.25},
+    Macro:{cx:0.25,cy:0.70},Sentiment:{cx:0.55,cy:0.75},DeFi:{cx:0.80,cy:0.70}
+  };
+
+  let html='';
+  // Category labels (background)
+  if(sdmView==='all'){
+    for(const[cat,pos]of Object.entries(categoryPositions)){
+      html+=`<div class="sdm-cluster-label" style="left:${pos.cx*100-5}%;top:${pos.cy*100-12}%">${cat}</div>`;
+    }
+  }
+
+  words.forEach((w,i)=>{
+    const catPos=categoryPositions[w.category]||{cx:0.5,cy:0.5};
+    // Spread words within cluster zone
+    const spread=sdmView==='all'?0.15:0.35;
+    const angle=(i/words.length)*Math.PI*2+w.seed*0.1;
+    const radius=spread*(0.3+sr(w.seed,70)*0.7);
+    const x=sdmView==='all'?catPos.cx+Math.cos(angle)*radius:0.5+Math.cos(angle)*radius;
+    const y=sdmView==='all'?catPos.cy+Math.sin(angle)*radius*0.8:0.5+Math.sin(angle)*radius*0.6;
+
+    // SIZE from OI Impact
+    const fontSize=Math.max(10,Math.min(28,w.oiImpact/100*24+8));
+    // COLOR from polarity
+    const baseColor=w.polarity==='positive'?'0,220,130':w.polarity==='negative'?'255,56,96':'160,160,192';
+    // BRIGHTNESS from momentum
+    const opacity=Math.max(0.4,Math.min(1.0,0.4+Math.abs(w.momentum)*0.5));
+    // GLOW from smart money lead (delta > 1.5)
+    const isSmartMoney=w.sentimentDelta>1.5;
+    const glow=isSmartMoney?`text-shadow:0 0 12px rgba(${baseColor},0.8),0 0 24px rgba(${baseColor},0.4)`:'';
+
+    const leftPct=Math.max(3,Math.min(88,x*100));
+    const topPct=Math.max(5,Math.min(85,y*100));
+
+    html+=`<div class="sdm-word" style="left:${leftPct}%;top:${topPct}%;font-size:${fontSize}px;color:rgba(${baseColor},${opacity});${glow}" title="${w.word}: X=${w.xVelocity} Google=${w.googleTrends} Delta=${w.sentimentDelta} OI=${w.oiImpact.toFixed(0)}">
+      ${w.word}
+      ${isSmartMoney?`<span class="sdm-badge" style="background:rgba(245,158,11,.2);color:var(--amber);border:1px solid rgba(245,158,11,.3)">SM</span>`:''}
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+
+function renderSDMDeltaList(){
+  const el=document.getElementById('sdm-delta-list');if(!el)return;
+  const sorted=[...SENTIMENT_WORDS].sort((a,b)=>b.sentimentDelta-a.sentimentDelta);
+  el.innerHTML=sorted.slice(0,12).map(w=>{
+    const isSmartMoney=w.sentimentDelta>1.5;
+    const deltaColor=isSmartMoney?'var(--amber)':w.sentimentDelta>1?'var(--green)':'var(--t3)';
+    return`<div class="sdm-delta-bar">
+      <span style="font-weight:700;font-size:10px;width:80px">${w.word}</span>
+      <span style="font-size:8px;color:var(--t4);width:50px">X: ${w.xVelocity}</span>
+      <span style="font-size:8px;color:var(--t4);width:50px">G: ${w.googleTrends}</span>
+      <div class="bar"><div class="fill" style="width:${Math.min(100,w.sentimentDelta/3*100)}%;background:${deltaColor}"></div></div>
+      <span style="font-size:10px;font-weight:700;font-family:'Space Mono',monospace;color:${deltaColor};width:40px;text-align:right">${w.sentimentDelta.toFixed(2)}</span>
+      ${isSmartMoney?'<span class="badge b-amber" style="font-size:7px">SMART $</span>':''}
+    </div>`;
+  }).join('');
+}
+
+function renderSDMCategoryBreakdown(){
+  const el=document.getElementById('sdm-category-breakdown');if(!el)return;
+  const cats=Object.keys(SENTIMENT_CATEGORIES);
+  el.innerHTML=cats.map(cat=>{
+    const words=SENTIMENT_WORDS.filter(w=>w.category===cat);
+    const avgDelta=words.reduce((s,w)=>s+w.sentimentDelta,0)/Math.max(1,words.length);
+    const avgMomentum=words.reduce((s,w)=>s+w.momentum,0)/Math.max(1,words.length);
+    const posCount=words.filter(w=>w.polarity==='positive').length;
+    const negCount=words.filter(w=>w.polarity==='negative').length;
+    const catColor=avgMomentum>0.2?'var(--green)':avgMomentum<-0.2?'var(--red)':'var(--t3)';
+    return`<div style="padding:8px 14px;border-bottom:1px solid rgba(19,19,37,.35);display:flex;align-items:center;gap:10px">
+      <span style="font-weight:700;font-size:11px;width:80px">${cat}</span>
+      <div style="flex:1;display:flex;gap:2px;align-items:center">
+        <div style="flex:${posCount};height:6px;background:var(--green);border-radius:3px 0 0 3px;opacity:.6"></div>
+        <div style="flex:${negCount||1};height:6px;background:var(--red);border-radius:0 3px 3px 0;opacity:.6"></div>
+      </div>
+      <span style="font-size:9px;font-family:'Space Mono',monospace;color:${catColor};width:50px;text-align:right">Δ ${avgDelta.toFixed(2)}</span>
+      <span class="badge ${avgMomentum>0.2?'b-green':avgMomentum<-0.2?'b-red':'b-neutral'}" style="font-size:7px">${avgMomentum>0.2?'RISING':avgMomentum<-0.2?'FALLING':'FLAT'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══ ALPHA SCANNER RENDERERS ═════════════════════════════════════
+let alphaFilter='all';
+function setAlphaFilter(f,el){alphaFilter=f;el.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('act'));el.classList.add('act');renderAlphaScanner();}
+
+function renderAlphaScanner(){
+  const el=document.getElementById('alpha-scanner-body');if(!el)return;
+  let signals=runAlphaScanner();
+  if(alphaFilter!=='all')signals=signals.filter(s=>s.type===alphaFilter);
+
+  const typeIcons={DIVERGENCE:'↗',WHALE_FLOW:'🐋',SQUEEZE:'⚡',IV_MISPRICE:'📊'};
+  const typeBgs={DIVERGENCE:'var(--green2)',WHALE_FLOW:'var(--cyan2)',SQUEEZE:'var(--amber2)',IV_MISPRICE:'var(--violet2)'};
+  const typeBorders={DIVERGENCE:'rgba(0,220,130,.3)',WHALE_FLOW:'rgba(0,229,255,.3)',SQUEEZE:'rgba(255,183,0,.3)',IV_MISPRICE:'rgba(168,85,247,.3)'};
+
+  el.innerHTML=signals.length===0?'<div style="padding:20px;text-align:center;color:var(--t4);font-size:11px">No signals matching current filter</div>':
+    signals.map(s=>{
+    const confColor=s.confidence>=80?'var(--green)':s.confidence>=60?'var(--amber)':'var(--cyan)';
+    return`<div class="alpha-row" onclick="selectAsset('${s.token}')">
+      <div class="alpha-icon" style="background:${typeBgs[s.type]||'var(--surface2)'};border:1px solid ${typeBorders[s.type]||'var(--border)'};color:${s.color}">${typeIcons[s.type]||'?'}</div>
+      <div class="alpha-main">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="alpha-signal-badge" style="background:${typeBgs[s.type]};color:${s.color};border-color:${typeBorders[s.type]}">${s.signal}</span>
+          <span style="font-weight:800;font-size:12px">${s.token}</span>
+          <span style="font-size:9px;color:var(--t4)">${s.name}</span>
+        </div>
+        <div class="alpha-signal-desc">${s.desc}</div>
+        <div class="alpha-metrics">${s.metrics.map(m=>`<span class="alpha-metric" style="color:${m.c}">${m.l}: ${m.v}</span>`).join('')}</div>
+      </div>
+      <div class="alpha-conf">
+        <div class="alpha-conf-val" style="color:${confColor}">${s.confidence}</div>
+        <div class="alpha-conf-label">CONFIDENCE</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Also populate sub-panels
+  renderAlphaSubPanels(signals);
+}
+
+function renderAlphaSubPanels(allSignals){
+  if(!allSignals)allSignals=runAlphaScanner();
+
+  // Squeeze watch
+  const sqEl=document.getElementById('alpha-squeeze-watch');
+  if(sqEl){
+    const squeezes=allSignals.filter(s=>s.type==='SQUEEZE');
+    sqEl.innerHTML=squeezes.length===0?'<div style="padding:14px;color:var(--t4);font-size:10px;text-align:center">No squeeze signals</div>':
+      squeezes.map(s=>`<div class="scan-row" onclick="selectAsset('${s.token}')">
+        <div class="scan-sym">${s.token}</div>
+        <div class="scan-bar"><div class="scan-bar-fill" style="width:${s.confidence}%;background:${s.color}"></div></div>
+        <div class="scan-score" style="color:${s.color}">${s.confidence}</div>
+      </div>`).join('');
+  }
+
+  // Divergence list
+  const dvEl=document.getElementById('alpha-divergence-list');
+  if(dvEl){
+    const divs=allSignals.filter(s=>s.type==='DIVERGENCE');
+    dvEl.innerHTML=divs.length===0?'<div style="padding:14px;color:var(--t4);font-size:10px;text-align:center">No divergence signals</div>':
+      divs.map(s=>`<div class="scan-row" onclick="selectAsset('${s.token}')">
+        <div class="scan-sym">${s.token}</div>
+        <div class="scan-bar"><div class="scan-bar-fill" style="width:${s.confidence}%;background:var(--green)"></div></div>
+        <div class="scan-score" style="color:var(--green)">${s.confidence}</div>
+      </div>`).join('');
+  }
+
+  // Whale flow
+  const wfEl=document.getElementById('alpha-whale-flow');
+  if(wfEl){
+    const whales=allSignals.filter(s=>s.type==='WHALE_FLOW');
+    wfEl.innerHTML=whales.length===0?'<div style="padding:14px;color:var(--t4);font-size:10px;text-align:center">No whale flow signals</div>':
+      whales.map(s=>`<div class="scan-row" onclick="selectAsset('${s.token}')">
+        <div class="scan-sym">${s.token}</div>
+        <div class="scan-bar"><div class="scan-bar-fill" style="width:${s.confidence}%;background:var(--cyan)"></div></div>
+        <div style="font-size:9px;color:var(--t3);flex-shrink:0">${s.signal}</div>
+        <div class="scan-score" style="color:var(--cyan)">${s.confidence}</div>
+      </div>`).join('');
+  }
+}
+
+// ═══ STRESS TEST RENDERERS ═══════════════════════════════════════
+function renderStressScenarios(){
+  const el=document.getElementById('stress-scenarios');if(!el)return;
+  el.innerHTML=STRESS_SCENARIOS.map(s=>`
+    <div class="stress-scenario ${stressScenario===s.id?'active':''}" onclick="selectStressScenario('${s.id}')">
+      <div class="icon">${s.icon}</div>
+      <div class="name">${s.name}</div>
+      <div class="drop">${s.spotDrop}%</div>
+      <div class="date">${s.date}</div>
+    </div>`).join('');
+}
+
+function selectStressScenario(id){
+  stressScenario=id;
+  const scenario=STRESS_SCENARIOS.find(s=>s.id===id);
+  if(scenario){
+    const slider=document.getElementById('stress-slider');
+    if(slider)slider.value=scenario.spotDrop;
+    stressCustomPct=scenario.spotDrop;
+  }
+  renderStressScenarios();
+  updateStressTest();
+}
+
+function updateStressTest(){
+  const slider=document.getElementById('stress-slider');
+  const pct=slider?parseFloat(slider.value):-30;
+  stressCustomPct=pct;
+  const sv=document.getElementById('stress-slider-val');
+  if(sv)sv.textContent=`${pct}%`;
+
+  const result=calcStressTest(stressScenario,pct);
+  renderStressPortfolio(result);
+  renderStressIVImpact(result);
+  renderStressComparison();
+}
+
+function renderStressPortfolio(result){
+  const el=document.getElementById('stress-portfolio');if(!el)return;
+  el.innerHTML=result.assets.map(a=>`
+    <div class="stress-asset">
+      <div class="left">
+        <div><div class="sym">${a.sym}</div><div class="weight">${(a.weight*100).toFixed(0)}% weight</div></div>
+      </div>
+      <div class="impact">
+        <div class="new-price" style="color:var(--red)">${fPr(a.stressedPrice)}</div>
+        <div class="pnl" style="color:var(--red)">${a.pnlPct>=0?'+':''}${a.pnlPct.toFixed(1)}% · ${fmt(Math.abs(a.pnl))}</div>
+        <div class="iv-impact">IV: ${a.stressedIV}% (+${a.ivChange.toFixed(0)}pts) · Vega: ${a.vegaImpact>=0?'+':''}${fmt(Math.abs(a.vegaImpact))}</div>
+      </div>
+    </div>`).join('');
+
+  const totalEl=document.getElementById('stress-total');
+  if(totalEl){
+    const scenario=result.scenario;
+    totalEl.innerHTML=`
+      <div class="big" style="color:var(--red)">${result.totalPnLPct}%</div>
+      <div style="font-size:18px;font-weight:800;font-family:'Space Mono',monospace;color:var(--red);margin-top:4px">${fmt(Math.abs(result.totalPnL))} LOSS</div>
+      <div class="sub">Scenario: ${scenario.name} (${scenario.date}) · Spot ${stressCustomPct}% · IV spikes ${scenario.ivSpike}+pts<br/>
+      Delta-adjusted with Vega offset from IV expansion on options positions.</div>`;
+  }
+}
+
+function renderStressIVImpact(result){
+  const el=document.getElementById('stress-iv-impact');if(!el)return;
+  const scenario=result.scenario;
+  el.innerHTML=`
+    <div style="margin-bottom:10px"><strong style="color:var(--violet)">Volatility Impact Analysis</strong></div>
+    <div style="display:grid;grid-template-columns:repeat(${result.assets.length},1fr);gap:8px;margin-bottom:12px">
+      ${result.assets.map(a=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:10px;text-align:center">
+        <div style="font-weight:800;font-size:12px;margin-bottom:4px">${a.sym}</div>
+        <div style="font-size:9px;color:var(--t4)">Current IV</div>
+        <div style="font-size:12px;font-weight:700;font-family:'Space Mono',monospace;color:var(--amber)">${(a.stressedIV-a.ivChange).toFixed(1)}%</div>
+        <div style="font-size:9px;color:var(--t4);margin-top:4px">Stressed IV</div>
+        <div style="font-size:12px;font-weight:700;font-family:'Space Mono',monospace;color:var(--red)">${a.stressedIV}%</div>
+        <div style="font-size:9px;color:var(--violet);margin-top:4px">Vega P&L</div>
+        <div style="font-size:11px;font-weight:700;font-family:'Space Mono',monospace;color:${a.vegaImpact>=0?'var(--green)':'var(--red)'}">${a.vegaImpact>=0?'+':''}${fmt(Math.abs(a.vegaImpact))}</div>
+      </div>`).join('')}
+    </div>
+    <div style="background:rgba(168,85,247,.04);border:1px solid rgba(168,85,247,.12);border-radius:7px;padding:10px;font-size:10px;line-height:1.6">
+      <strong style="color:var(--violet)">Key Insight:</strong> A ${Math.abs(stressCustomPct)}% spot drawdown would spike IV by ~${scenario.ivSpike}+ points. If you hold long options, the Vega gain partially offsets Delta losses. If you are short vol (Iron Condors, sold straddles), the IV spike <strong style="color:var(--red)">amplifies</strong> your losses beyond the spot move alone.
+    </div>`;
+}
+
+function renderStressComparison(){
+  const el=document.getElementById('stress-comparison');if(!el)return;
+  el.innerHTML=STRESS_SCENARIOS.map(s=>{
+    const r=calcStressTest(s.id,s.spotDrop);
+    return`<div style="padding:8px 14px;border-bottom:1px solid rgba(19,19,37,.35);display:flex;align-items:center;gap:10px">
+      <span style="font-size:14px">${s.icon}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:10px">${s.name}</div>
+        <div style="font-size:8px;color:var(--t4)">${s.date} · Spot ${s.spotDrop}%</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;font-weight:800;font-family:'Space Mono',monospace;color:var(--red)">${r.totalPnLPct}%</div>
+        <div style="font-size:8px;color:var(--t4)">${fmt(Math.abs(r.totalPnL))}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══ SPOT MODE SPECIFIC RENDERERS ════════════════════════════════
+function renderSpotHypeScore(){
+  const el=document.getElementById('spot-hype-body');if(!el)return;
+  const tokens=[...D].filter(t=>t.mc>300e6).map(t=>({...t,...calcHypeScore(t)})).sort((a,b)=>b.hype-a.hype).slice(0,14);
+  el.innerHTML=tokens.map(t=>{
+    const hypeColor=t.hype>70?'var(--amber)':t.hype>40?'var(--cyan)':'var(--t3)';
+    const trendColor=t.trend==='RISING'?'var(--green)':t.trend==='FALLING'?'var(--red)':'var(--t4)';
+    return`<div class="spot-hype-meter">
+      <div class="sym">${t.s}</div>
+      <div class="meter-wrap">
+        <div class="meter"><div class="meter-fill" style="width:${t.hype}%;background:${hypeColor}"></div></div>
+      </div>
+      <div class="score" style="color:${hypeColor}">${t.hype}</div>
+      <div class="trend" style="color:${trendColor}">${t.trend}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderSpotBreakoutSignals(){
+  const el=document.getElementById('spot-breakout-body');if(!el)return;
+  const tokens=[...D].filter(t=>t.mc>500e6);
+  const signals=[];
+  for(const t of tokens){
+    // RSI-based breakout detection
+    if(t.rsi>70&&t.ch24h>3){
+      signals.push({sym:t.s,type:'OVERBOUGHT',desc:`RSI ${t.rsi} + ${fP(t.ch24h)} — potential pullback`,color:'var(--red)',score:t.rsi});
+    } else if(t.rsi<30&&t.ch24h<-3){
+      signals.push({sym:t.s,type:'OVERSOLD',desc:`RSI ${t.rsi} + ${fP(t.ch24h)} — potential bounce`,color:'var(--green)',score:100-t.rsi});
+    } else if(t.ch24h>5&&t.vol>t.mc*0.1){
+      signals.push({sym:t.s,type:'BREAKOUT',desc:`${fP(t.ch24h)} on ${(t.vol/t.mc*100).toFixed(1)}% vol/mcap — momentum breakout`,color:'var(--cyan)',score:Math.abs(t.ch24h)*5});
+    } else if(t.ch7d>15&&t.ch24h>0){
+      signals.push({sym:t.s,type:'TREND',desc:`+${t.ch7d.toFixed(1)}% 7D — sustained uptrend`,color:'var(--green)',score:t.ch7d*2});
+    }
+  }
+  signals.sort((a,b)=>b.score-a.score);
+  el.innerHTML=signals.length===0?'<div style="padding:14px;color:var(--t4);font-size:10px;text-align:center">No breakout signals detected</div>':
+    signals.slice(0,10).map(s=>`<div class="scan-row">
+      <div class="scan-sym">${s.sym}</div>
+      <span class="badge ${s.type==='OVERBOUGHT'?'b-red':s.type==='OVERSOLD'?'b-green':s.type==='BREAKOUT'?'b-cyan':'b-green'}" style="font-size:7px;flex-shrink:0">${s.type}</span>
+      <div style="flex:1;font-size:9px;color:var(--t3);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.desc}</div>
+    </div>`).join('');
+}
+
 function renderTable(){
   const el=document.getElementById("tbl-body");if(!el)return;
   const q=(document.getElementById("tbl-search")?.value||"").toLowerCase();
@@ -2314,6 +3124,9 @@ function switchTab(t){
   if(t==='fairvalue'){renderFVPanel();renderProbCone();}
   if(t==='funding'){renderFunding("fund-body");renderLiqData();const bp=(D.find(d=>d.s==="BTC")||{p:98450}).p;drawLiqHeatmap("liq-btc",bp,bp*0.86,bp*1.17);}
   if(t==='scanner'){renderTable();renderCats();}
+  if(t==='sentiment'){renderSentimentWordmap();renderSDMDeltaList();renderSDMCategoryBreakdown();}
+  if(t==='alpha'){renderAlphaScanner();}
+  if(t==='stresstest'){renderStressScenarios();updateStressTest();}
 }
 
 // ═══ TICK ═══════════════════════════════════════════════════════
@@ -2336,8 +3149,12 @@ function tick(){
 function renderAll(){
   renderMkt();renderFG();renderRegime();renderTicker();
   const tab=document.querySelector('.tab-panel.active')?.id;
+  // Shared panels (available in both modes)
+  if(tab==='panel-sentiment'){renderSentimentWordmap();renderSDMDeltaList();renderSDMCategoryBreakdown();}
+  if(tab==='panel-alpha'){renderAlphaScanner();}
+  if(tab==='panel-stresstest'){renderStressScenarios();updateStressTest();}
   if(currentMode==='spot'){
-    if(tab==='panel-dashboard'){renderTreemap();renderGL();renderBubbles();renderNews("news-dash");}
+    if(tab==='panel-dashboard'){renderTreemap();renderGL();renderBubbles();renderNews("news-dash");renderSpotHypeScore();renderSpotBreakoutSignals();}
     if(tab==='panel-funding'){renderFunding("fund-body");renderLiqData();}
     if(tab==='panel-scanner')renderTable();
     if(tab==='panel-intel')renderNews("news-full");
@@ -2369,7 +3186,7 @@ function initApp(){
 }
 
 // ═══ BOOT ═══════════════════════════════════════════════════════
-checkSession();
+showApp();
 </script>
 </body>
 </html>
