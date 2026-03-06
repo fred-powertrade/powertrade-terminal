@@ -101,7 +101,7 @@ header{background:var(--header-bg);backdrop-filter:blur(24px);-webkit-backdrop-f
 /* MAIN TABS */
 .main-tabs{background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:49px;z-index:190}
 .main-tabs-inner{display:flex;gap:0}
-.mtab{padding:9px 18px;font-size:11px;font-weight:600;color:var(--t4);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;white-space:nowrap;letter-spacing:.01em}
+.mtab{padding:9px 18px;font-size:11px;font-weight:600;color:var(--t4);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;white-space:nowrap;letter-spacing:.01em;position:relative}
 .mtab:hover{color:var(--t2);background:rgba(255,255,255,.008)}
 .mtab.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(0,220,130,.02)}
 .tab-panel{display:none}.tab-panel.active{display:block}
@@ -171,8 +171,16 @@ header{background:var(--header-bg);backdrop-filter:blur(24px);-webkit-backdrop-f
 .sig-m .l{font-size:7.5px;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:1px}
 .sig-m .v{font-size:10px;font-weight:700;font-family:'Ubuntu Mono',monospace}
 .sig-strategy{font-size:9.5px;font-weight:600;padding:6px 10px;background:rgba(0,220,130,.04);border:1px solid rgba(0,220,130,.1);border-radius:6px;color:var(--amber);margin-top:8px;display:flex;align-items:center;gap:5px}
+.sig-trade-link{font-size:8.5px;font-weight:700;padding:5px 10px;background:rgba(0,220,130,.08);border:1px solid rgba(0,220,130,.18);border-radius:5px;color:var(--cyan);margin-top:6px;display:flex;align-items:center;gap:5px;cursor:pointer;transition:all .15s;text-decoration:none}
+.sig-trade-link:hover{background:rgba(0,220,130,.15);border-color:rgba(0,220,130,.35);transform:translateY(-1px)}
+.sig-trade-link .pt-arrow{font-size:11px;opacity:.6}
+.sig-expiry{font-size:8px;font-weight:700;font-family:'Ubuntu Mono',monospace;padding:2px 6px;border-radius:3px;background:var(--surface3);color:var(--t2);letter-spacing:.04em}
+.sig-explain{font-size:9px;color:var(--t4);line-height:1.5;margin-top:6px;padding:6px 8px;background:var(--bg2);border-radius:5px;border-left:2px solid var(--border2)}
 
-/* Flow Feed */
+/* Tab Tooltips */
+.mtab .tab-tooltip{visibility:hidden;opacity:0;position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a24;border:1px solid var(--border2);border-radius:6px;padding:8px 11px;font-size:9px;font-weight:400;color:var(--t2);line-height:1.5;white-space:normal;width:220px;z-index:999;pointer-events:none;transition:opacity .15s,visibility .15s;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.mtab .tab-tooltip::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:5px solid #1a1a24}
+.mtab:hover .tab-tooltip{visibility:visible;opacity:1}
 .flow-item{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .1s}
 .flow-item:hover{background:rgba(255,255,255,.015)}
 .flow-item:last-child{border-bottom:none}
@@ -1924,22 +1932,48 @@ function calcGammaProfile(sym){
   return{strikes,flipPrice,wallPrice,flipDelta,regime,price,gexBase,maxGEX};
 }
 
+const SIGNAL_EXPIRIES=["28MAR25","25APR25","30MAY25","27JUN25","26SEP25","26DEC25"];
+function pickSignalExpiry(type){
+  if(type==="vol"||type==="squeeze")return SIGNAL_EXPIRIES[0];
+  if(type==="sell")return SIGNAL_EXPIRIES[1];
+  return SIGNAL_EXPIRIES[2];
+}
+function ptOrderbookUrl(sym, expiry, strike, optType){
+  return `https://app.power.trade/trade/${sym}-${expiry}-${strike}-${optType}`;
+}
+function ptTradeUrl(sym){
+  return `https://app.power.trade/trade/${sym}`;
+}
+
+const SIGNAL_EXPLANATIONS = {
+  "Long Vol Opportunity": "IV Rank measures current implied volatility relative to its 1-year range. Below 18% means options are historically cheap — buying straddles profits if actual volatility exceeds what the market is pricing. The lower the IVR, the more asymmetric the long vol bet becomes.",
+  "Sell Vol — IV Rich": "When IV Rank is above 80%, options are expensive relative to history. Selling premium via iron condors or strangles captures the difference between elevated implied vol and likely lower realized vol. Best when IV-RV spread is positive (IV overpricing actual moves).",
+  "Put Skew Extreme": "25-delta put skew measures the premium of out-of-the-money puts vs. calls. Extreme negative skew means the market is aggressively bidding downside protection. Risk reversals (sell put, buy call) profit from skew mean-reversion.",
+  "Call Skew Elevated": "Positive call skew means OTM calls are trading at a premium to puts. This typically indicates crowded upside speculation. Selling overpriced calls or call spreads profits when call premium mean-reverts.",
+  "Crowded Long": "Perpetual funding rate above 0.04% (annualized ~87%) signals extreme long leverage. Historically, crowded longs precede liquidation cascades. Put spreads protect against the inevitable funding-driven deleveraging.",
+  "Crowded Short": "Negative funding below -0.04% indicates heavy short positioning. Short squeezes become likely as market makers force-cover. Call spreads or outright longs benefit from the short covering rally.",
+  "Neg GEX — Amplification": "Negative Gamma Exposure (GEX) means market makers are short gamma — they must sell into declines and buy into rallies, amplifying moves in both directions. Long straddles profit from the increased realized volatility this creates."
+};
+
 function generateSignals(){
   const regime=detectRegime();
   const candidates=[...D].filter(t=>t.mc>500e6).sort((a,b)=>b.conviction-a.conviction);
   const signals=[];
   for(const t of candidates){
     if(signals.length>=9)break;
-    let type="neutral",title="",desc="",strategy="",metrics=[];
+    let type="neutral",title="",desc="",strategy="",metrics=[],optType="C",strikeMult=1;
     const ivRvSpread=t.iv-t.rv30;
-    if(t.ivRank<18){type="vol";title="Long Vol Opportunity";desc=`IV Rank at ${t.ivRank}th pctile — vol cheap.`;strategy=`Buy ATM Straddle · ${t.s}`;metrics=[{l:"IVR",v:`${t.ivRank}%`,c:"var(--green)"},{l:"IV",v:`${t.iv}%`,c:"var(--t2)"}];}
-    else if(t.ivRank>80){type="sell";title="Sell Vol — IV Rich";desc=`IV Rank ${t.ivRank}% — elevated.`;strategy=`Iron Condor · ${t.s}`;metrics=[{l:"IVR",v:`${t.ivRank}%`,c:"var(--red)"},{l:"IV-RV",v:`+${ivRvSpread.toFixed(1)}%`,c:"var(--red)"}];}
-    else if(t.skew25d<-4){type="squeeze";title="Put Skew Extreme";desc=`25Δ skew at ${t.skew25d}.`;strategy=`Risk Reversal · ${t.s}`;metrics=[{l:"Skew",v:`${t.skew25d}`,c:"var(--red)"}];}
-    else if(t.skew25d>4){type="squeeze";title="Call Skew Elevated";desc=`Call premium stretched +${t.skew25d}.`;strategy=`Sell OTM Calls · ${t.s}`;metrics=[{l:"Skew",v:`+${t.skew25d}`,c:"var(--amber)"}];}
-    else if(Math.abs(t.fund)>0.04){type="squeeze";title=t.fund>0?"Crowded Long":"Crowded Short";desc=`Funding ${(t.fund*100).toFixed(3)}%.`;strategy=t.fund>0?"Put Spreads":"Call Spreads";metrics=[{l:"Fund",v:`${(t.fund*100).toFixed(3)}%`,c:t.fund>0?"var(--red)":"var(--green)"}];}
-    else if(t.gammaExp<-t.mc*0.02){type="vol";title="Neg GEX — Amplification";desc=`GEX deeply negative.`;strategy=`Long Straddle · ${t.s}`;metrics=[{l:"GEX",v:fmt(t.gammaExp),c:"var(--red)"}];}
+    if(t.ivRank<18){type="vol";title="Long Vol Opportunity";desc=`IV Rank at ${t.ivRank}th pctile — vol is historically cheap. Options are underpricing future moves.`;strategy=`Buy ATM Straddle · ${t.s}`;optType="C";strikeMult=1;metrics=[{l:"IVR",v:`${t.ivRank}%`,c:"var(--green)"},{l:"IV",v:`${t.iv}%`,c:"var(--t2)"},{l:"RV30",v:`${t.rv30}%`,c:"var(--t2)"}];}
+    else if(t.ivRank>80){type="sell";title="Sell Vol — IV Rich";desc=`IV Rank ${t.ivRank}% — vol elevated vs. history. IV-RV spread of +${ivRvSpread.toFixed(1)}% suggests options overpricing moves.`;strategy=`Iron Condor · ${t.s}`;optType="C";strikeMult=1.05;metrics=[{l:"IVR",v:`${t.ivRank}%`,c:"var(--red)"},{l:"IV-RV",v:`+${ivRvSpread.toFixed(1)}%`,c:"var(--red)"},{l:"IV",v:`${t.iv}%`,c:"var(--t2)"}];}
+    else if(t.skew25d<-4){type="squeeze";title="Put Skew Extreme";desc=`25Δ skew at ${t.skew25d} — puts trading at a significant premium to calls. Downside fear is elevated.`;strategy=`Risk Reversal · ${t.s}`;optType="P";strikeMult=0.95;metrics=[{l:"Skew",v:`${t.skew25d}`,c:"var(--red)"},{l:"IVR",v:`${t.ivRank}%`,c:"var(--t2)"}];}
+    else if(t.skew25d>4){type="squeeze";title="Call Skew Elevated";desc=`Call premium stretched +${t.skew25d} — OTM calls are overpriced relative to puts. Upside speculation is crowded.`;strategy=`Sell OTM Calls · ${t.s}`;optType="C";strikeMult=1.1;metrics=[{l:"Skew",v:`+${t.skew25d}`,c:"var(--amber)"},{l:"IVR",v:`${t.ivRank}%`,c:"var(--t2)"}];}
+    else if(Math.abs(t.fund)>0.04){type="squeeze";title=t.fund>0?"Crowded Long":"Crowded Short";desc=`Funding ${(t.fund*100).toFixed(3)}% — ${t.fund>0?"longs paying extreme rates to maintain positions. Liquidation cascade risk elevated.":"shorts paying heavily — short squeeze probability rising."}`;strategy=t.fund>0?"Put Spreads":"Call Spreads";optType=t.fund>0?"P":"C";strikeMult=t.fund>0?0.95:1.05;metrics=[{l:"Fund",v:`${(t.fund*100).toFixed(3)}%`,c:t.fund>0?"var(--red)":"var(--green)"},{l:"OI",v:fmt(t.oi),c:"var(--t2)"}];}
+    else if(t.gammaExp<-t.mc*0.02){type="vol";title="Neg GEX — Amplification";desc=`GEX deeply negative at ${fmt(t.gammaExp)}. Dealer hedging will amplify moves in both directions.`;strategy=`Long Straddle · ${t.s}`;optType="C";strikeMult=1;metrics=[{l:"GEX",v:fmt(t.gammaExp),c:"var(--red)"},{l:"IVR",v:`${t.ivRank}%`,c:"var(--t2)"}];}
     else continue;
-    signals.push({...t,sigType:type,title,desc,strategy,metrics});
+    const expiry=pickSignalExpiry(type);
+    const strike=Math.round(t.p*strikeMult/((t.p>1000)?100:(t.p>100)?10:(t.p>10)?1:0.1))*((t.p>1000)?100:(t.p>100)?10:(t.p>10)?1:0.1);
+    const explain=SIGNAL_EXPLANATIONS[title]||'';
+    signals.push({...t,sigType:type,title,desc,strategy,metrics,expiry,strike,optType,explain,tradeUrl:ptTradeUrl(t.s),orderbookUrl:ptOrderbookUrl(t.s,expiry,strike,optType)});
   }
   return signals;
 }
@@ -2200,26 +2234,26 @@ function buildTabs(){
   const el=document.getElementById('main-tabs-inner');if(!el)return;
   if(currentMode==='spot'){
     el.innerHTML=`
-      <div class="mtab active" onclick="switchTab('dashboard')">Dashboard</div>
-      <div class="mtab" onclick="switchTab('sentiment')">Sentiment Map</div>
-      <div class="mtab" onclick="switchTab('alpha')">Alpha Scanner</div>
-      <div class="mtab" onclick="switchTab('funding')">Funding & Liqs</div>
-      <div class="mtab" onclick="switchTab('scanner')">Scanner</div>
-      <div class="mtab" onclick="switchTab('stresstest')">Stress Test</div>
-      <div class="mtab" onclick="switchTab('intel')">Intel</div>
-      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research</div>`;
+      <div class="mtab active" onclick="switchTab('dashboard')">Dashboard<span class="tab-tooltip">Overview of all markets — price treemap, bubble map, live news, hype scores, and breakout signals in one view.</span></div>
+      <div class="mtab" onclick="switchTab('sentiment')">Sentiment Map<span class="tab-tooltip">Predictive sentiment analysis combining X/Twitter velocity and Google Trends data. Identifies when smart money is leading retail sentiment.</span></div>
+      <div class="mtab" onclick="switchTab('alpha')">Alpha Scanner<span class="tab-tooltip">Scans for high-conviction trading opportunities across 60+ tokens using IV rank, funding rate, skew, and GEX dislocations.</span></div>
+      <div class="mtab" onclick="switchTab('funding')">Funding & Liqs<span class="tab-tooltip">Real-time perpetual funding rates, open interest breakdown, long/short ratios, and liquidation heatmaps across major exchanges.</span></div>
+      <div class="mtab" onclick="switchTab('scanner')">Scanner<span class="tab-tooltip">Full token screening table with sortable columns — filter by price change, volume, market cap, funding, and conviction score.</span></div>
+      <div class="mtab" onclick="switchTab('stresstest')">Stress Test<span class="tab-tooltip">Simulate portfolio impact under historical crash scenarios (COVID, FTX, Luna). Shows delta-adjusted PnL with IV spike modeling.</span></div>
+      <div class="mtab" onclick="switchTab('intel')">Intel<span class="tab-tooltip">Live news feed from Supabase with tag-based filters, trend detection, breaking alerts, and custom keyword notifications.</span></div>
+      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research<span class="tab-tooltip">Equity research-style analysis for crypto — detailed thesis, key levels, risk/reward profiles, and options strategy recommendations.</span></div>`;
   } else {
     el.innerHTML=`
-      <div class="mtab active" onclick="switchTab('signals')">Signal Feed</div>
-      <div class="mtab" onclick="switchTab('sentiment')">Sentiment Map</div>
-      <div class="mtab" onclick="switchTab('alpha')">Alpha Scanner</div>
-      <div class="mtab" onclick="switchTab('greeks')">Vanna & Charm</div>
-      <div class="mtab" onclick="switchTab('simulator')">Dealer Simulator</div>
-      <div class="mtab" onclick="switchTab('stresstest')">Stress Test</div>
-      <div class="mtab" onclick="switchTab('optionslab')">Options Lab</div>
-      <div class="mtab" onclick="switchTab('positioning')">Positioning</div>
-      <div class="mtab" onclick="switchTab('fairvalue')">Fair Value</div>
-      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research</div>`;
+      <div class="mtab active" onclick="switchTab('signals')">Signal Feed<span class="tab-tooltip">Top conviction options trade ideas with expiration dates, strike prices, and direct links to trade on PowerTrade's orderbook.</span></div>
+      <div class="mtab" onclick="switchTab('sentiment')">Sentiment Map<span class="tab-tooltip">Predictive sentiment analysis combining X/Twitter velocity and Google Trends data. Identifies when smart money leads retail.</span></div>
+      <div class="mtab" onclick="switchTab('alpha')">Alpha Scanner<span class="tab-tooltip">Scans for high-conviction opportunities using IV rank, funding, skew, and GEX data. Ranked by composite conviction score.</span></div>
+      <div class="mtab" onclick="switchTab('greeks')">Vanna & Charm<span class="tab-tooltip">Second-order Greeks analysis — Vanna (delta sensitivity to IV changes) and Charm (delta decay over time). Shows how dealer hedging shifts with market moves.</span></div>
+      <div class="mtab" onclick="switchTab('simulator')">Dealer Simulator<span class="tab-tooltip">Models market maker positioning and hedging flows. Simulates how dealer gamma exposure changes with spot price, revealing likely support/resistance zones.</span></div>
+      <div class="mtab" onclick="switchTab('stresstest')">Stress Test<span class="tab-tooltip">Simulate portfolio impact under historical crash scenarios with IV expansion. Delta-adjusted PnL with vega offset modeling.</span></div>
+      <div class="mtab" onclick="switchTab('optionslab')">Options Lab<span class="tab-tooltip">IV heatmaps, IV vs. realized vol analysis, live options flow feed, and skew monitor across all assets and expirations.</span></div>
+      <div class="mtab" onclick="switchTab('positioning')">Positioning<span class="tab-tooltip">Gamma Exposure (GEX) analysis — identifies key strike levels where dealer hedging creates magnetic price zones or amplification regions.</span></div>
+      <div class="mtab" onclick="switchTab('fairvalue')">Fair Value<span class="tab-tooltip">Options-implied fair value models using IV, realized vol, and probability cones. Shows expected price distributions for each asset.</span></div>
+      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research<span class="tab-tooltip">Equity research-style analysis for crypto — detailed thesis, key levels, risk/reward profiles, and options strategy recommendations.</span></div>`;
   }
 }
 
@@ -3114,14 +3148,29 @@ function renderSignals(){
   const colMap={vol:"sig-vol",sell:"sig-sell",squeeze:"sig-neutral",skew:"sig-vol",neutral:"sig-neutral"};
   const convCol=c=>c>=80?"var(--green)":c>=60?"var(--amber)":"var(--cyan)";
   const el=document.getElementById("signal-grid");if(!el)return;
-  el.innerHTML=sigs.slice(0,6).map(s=>`
-    <div class="sig-card ${colMap[s.sigType]||"sig-neutral"}" onclick="selectAsset('${s.s}')">
-      <div class="sig-header"><div><span class="sig-asset">${s.s}</span><span style="font-size:9px;color:var(--t4);margin-left:6px">${s.cat}</span></div><span class="sig-conv" style="color:${convCol(s.conviction)}">C:${s.conviction}</span></div>
+  el.innerHTML=sigs.slice(0,6).map(s=>{
+    const dte=LiveData.getDTE(s.expiry);
+    return `<div class="sig-card ${colMap[s.sigType]||"sig-neutral"}" onclick="selectAsset('${s.s}')">
+      <div class="sig-header">
+        <div><span class="sig-asset">${s.s}</span><span style="font-size:9px;color:var(--t4);margin-left:6px">${s.cat}</span></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="sig-expiry">${s.expiry} · ${dte}D</span>
+          <span class="sig-conv" style="color:${convCol(s.conviction)}">C:${s.conviction}</span>
+        </div>
+      </div>
       <div class="sig-title">${s.title}</div>
       <div class="sig-desc">${s.desc}</div>
-      <div class="sig-metrics">${s.metrics.map(m=>`<div class="sig-m"><div class="l">${m.l}</div><div class="v num-mono" style="color:${m.c}">${m.v}</div></div>`).join('')}</div>
+      <div class="sig-metrics">${s.metrics.map(m=>`<div class="sig-m"><div class="l">${m.l}</div><div class="v num-mono" style="color:${m.c}">${m.v}</div></div>`).join('')}
+        <div class="sig-m"><div class="l">STRIKE</div><div class="v num-mono" style="color:var(--t1)">$${s.strike.toLocaleString()}</div></div>
+        <div class="sig-m"><div class="l">TYPE</div><div class="v num-mono" style="color:var(--t1)">${s.optType==='C'?'CALL':'PUT'}</div></div>
+      </div>
       <div class="sig-strategy">${s.strategy}</div>
-    </div>`).join('');
+      <a class="sig-trade-link" href="${s.orderbookUrl}" target="_blank" onclick="event.stopPropagation()">
+        <span class="pt-arrow">&#9654;</span> Trade on PowerTrade · ${s.s} ${s.expiry} $${s.strike.toLocaleString()} ${s.optType}
+      </a>
+      <div class="sig-explain">${s.explain}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderExpectedMove(id,sym){
