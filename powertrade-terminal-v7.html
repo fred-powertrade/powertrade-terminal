@@ -22,6 +22,9 @@
   --regime-expansion:#FB3F3F;--regime-compression:#3b82f6;--regime-squeeze:#ffb700;--regime-trending:#0EEA0C;
   --card-blur:none;--card-bg:#101418;
   --header-bg:#22272D;
+  --font-mono:'SF Mono',SFMono-Regular,ui-monospace,'Ubuntu Mono',monospace;
+  --color-bid:#0EEA0C;--color-ask:#FB3F3F;
+  --color-bid-opacity07:rgba(14,234,12,0.07);--color-ask-opacity07:rgba(251,63,63,0.07);
 }
 
 /* ═══ LIGHT THEME ═══ */
@@ -66,10 +69,41 @@ a{color:var(--cyan);text-decoration:none}
 .tag-info{background:var(--blue2);color:var(--blue)}.tag-sym{background:rgba(255,255,255,.04);color:var(--t2)}
 .tag-teal{background:var(--teal2);color:var(--teal)}
 
+/* ═══ POWERTRADE BUTTON VARIANTS ═══ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-family:inherit;font-weight:600;border:none;transition:all 0.25s;white-space:nowrap;letter-spacing:.01em}
+.btn:disabled{pointer-events:none;opacity:.5}
+.btn-power{background:var(--color-bid);color:#000;border-radius:2px;font-size:14px;height:48px;padding:0 24px}
+.btn-power:hover{background:#12ff0a;box-shadow:0 0 12px rgba(14,234,12,.3)}
+.btn-primary{background:var(--color-bid);color:#000;border-radius:2px;font-size:12px;font-weight:600;height:36px;padding:0 24px}
+.btn-outline-buy{background:var(--color-bid-opacity07);color:var(--color-bid);border:1px solid var(--color-bid);border-radius:2px;font-size:12px;height:36px;padding:0 24px}
+.btn-outline-buy:hover{background:rgba(14,234,12,.14)}
+.btn-outline-sell{background:var(--color-ask-opacity07);color:var(--color-ask);border:1px solid var(--color-ask);border-radius:2px;font-size:12px;height:36px;padding:0 24px}
+.btn-outline-sell:hover{background:rgba(251,63,63,.14)}
+.btn-gray{background:var(--surface3);color:#fff;border-radius:4px;font-size:12px;height:28px;padding:0 12px}
+.btn-sm{height:28px;font-size:12px;padding:0 12px}
+.btn-xs{height:24px;font-size:11px;padding:0 8px}
+
+/* ═══ INFO ICON + TOOLTIP ═══ */
+.info-wrap{position:relative;display:inline-flex;align-items:center}
+.info-icon{width:14px;height:14px;border-radius:50%;background:var(--surface4);border:1px solid var(--border2);color:var(--t4);font-size:8px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;margin-left:5px;flex-shrink:0;font-style:normal;transition:all .15s;user-select:none}
+.info-icon:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan3)}
+.info-tooltip{visibility:hidden;opacity:0;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);border-radius:4px;padding:8px 10px;font-size:10px;font-weight:400;color:var(--t2);line-height:1.5;white-space:normal;width:220px;z-index:999;pointer-events:none;transition:opacity .15s,visibility .15s;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.info-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid var(--surface3)}
+.info-wrap:hover .info-tooltip{visibility:visible;opacity:1}
+
+/* ═══ GLOW CARD (premium/featured items) ═══ */
+.card-glow{box-shadow:0 0 20px rgba(14,234,12,0.05);border-color:rgba(14,234,12,0.15)!important}
+.card-glow:hover{box-shadow:0 0 28px rgba(14,234,12,0.09)}
+
+/* ═══ SIGNAL STRENGTH SPARKLINE ═══ */
+.sparkline-wrap{display:flex;flex-direction:column;align-items:center;flex-shrink:0;gap:2px}
+.sparkline-wrap svg{display:block}
+.sparkline-label{font-size:7px;color:var(--t4);text-transform:uppercase;letter-spacing:.04em}
+
 /* Card */
-.card{background:var(--card-bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:background .3s,border-color .3s}
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:4px;overflow:hidden;transition:background .3s,border-color .3s}
 .card-h{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0}
-.card-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);display:flex;align-items:center;gap:6px}
+.card-t{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--t3);display:flex;align-items:center;gap:6px}
 .card-t .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 .card-b{padding:13px 15px}.card-bnp{padding:0}
 .scroll-y{overflow-y:auto}.scroll-sm{overflow-y:auto;max-height:320px}.scroll-md{overflow-y:auto;max-height:420px}
@@ -226,8 +260,8 @@ header{background:var(--header-bg);border-bottom:1px solid var(--border);positio
 
 /* Table */
 .ftable{width:100%;border-collapse:collapse}
-.ftable th{padding:6px 9px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t4);text-align:left;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;cursor:pointer;user-select:none;z-index:5}
-.ftable th:hover{color:var(--t2)}.ftable td{padding:5px 9px;font-size:10.5px;border-bottom:1px solid rgba(255,255,255,.05)}
+.ftable th{padding:6px 9px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--t3);text-align:left;border-bottom:1px solid var(--border);background:var(--surface3);position:sticky;top:0;cursor:pointer;user-select:none;z-index:5}
+.ftable th:hover{color:var(--t1)}.ftable td{padding:5px 9px;font-size:11px;border-bottom:1px solid rgba(255,255,255,.04)}
 .ftable tr:hover td{background:rgba(255,255,255,.012)}
 
 /* Misc layout */
@@ -2284,25 +2318,41 @@ function buildOptionsPanels(){
         <span class="badge b-amber">INSTITUTIONAL</span>
       </div>
       <div class="greek-grid">
-        <div class="greek-card">
-          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Net Vanna — Vol-Sensitivity Hedge</div>
-            <span class="badge b-violet">dΔ/dσ</span></div>
-          <div style="padding:12px 14px;font-size:10px;color:var(--t3);line-height:1.6;border-bottom:1px solid var(--border)">
-            Predicts where dealers must buy/sell the underlying as IV changes. High positive Vanna zones = "Vol-Squeezes" where an IV drop forces dealer spot selling.
+        <div class="greek-card card-glow">
+          <div class="card-h">
+            <div class="card-t">
+              <span class="dot" style="background:var(--violet)"></span>Net Vanna — Vol-Sensitivity Hedge
+              <span class="info-wrap">
+                <span class="info-icon">i</span>
+                <span class="info-tooltip"><strong style="color:var(--cyan)">Vanna (dΔ/dσ)</strong><br/>Measures dealer spot hedging requirements relative to IV changes. When IV rises, positive-Vanna dealers must buy spot to remain delta-neutral. When IV falls, they sell — creating structural price pressure tied directly to volatility moves.</span>
+              </span>
+            </div>
+            <span class="badge b-violet">dΔ/dσ</span>
+          </div>
+          <div style="padding:10px 14px;font-size:10px;color:var(--t3);line-height:1.6;border-bottom:1px solid var(--border);background:var(--bg2)">
+            Predicts where dealers must buy/sell spot as IV changes. High positive Vanna → an IV drop forces dealer spot selling ("vol-squeeze"). Negative Vanna → IV spike triggers buying.
           </div>
           <div class="card-bnp scroll-sm" id="vanna-body"></div>
         </div>
-        <div class="greek-card">
-          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--teal)"></span>Net Charm — Weekend Decay Hedge</div>
-            <span class="badge b-teal">dΔ/dt</span></div>
-          <div style="padding:12px 14px;font-size:10px;color:var(--t3);line-height:1.6;border-bottom:1px solid var(--border)">
-            Predicts forced dealer flows over weekends/holidays. If dealers are long Charm, they must sell the underlying as time passes — creating structural price drift.
+        <div class="greek-card card-glow">
+          <div class="card-h">
+            <div class="card-t">
+              <span class="dot" style="background:var(--teal)"></span>Net Charm — Weekend Decay Hedge
+              <span class="info-wrap">
+                <span class="info-icon">i</span>
+                <span class="info-tooltip"><strong style="color:var(--cyan)">Charm (dΔ/dt)</strong><br/>The rate at which delta decays with time. Dealers holding net positive Charm must sell spot as each day passes to stay delta-neutral — creating predictable structural drift, especially over weekends and holidays when no rebalancing occurs.</span>
+              </span>
+            </div>
+            <span class="badge b-teal">dΔ/dt</span>
+          </div>
+          <div style="padding:10px 14px;font-size:10px;color:var(--t3);line-height:1.6;border-bottom:1px solid var(--border);background:var(--bg2)">
+            Predicts forced dealer flows from time decay. Positive Charm → dealers sell as time passes. Strongest effect accumulates over weekends when delta cannot be rebalanced.
           </div>
           <div class="card-bnp scroll-sm" id="charm-body"></div>
         </div>
       </div>
-      <div class="card mb">
-        <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--amber)"></span>Combined Vanna+Charm Signal</div></div>
+      <div class="card card-glow mb">
+        <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--amber)"></span>Combined Vanna+Charm Signal</div><span class="badge b-amber">INSTITUTIONAL</span></div>
         <div class="card-b" id="vanna-charm-signal"></div>
       </div>
     </div>
@@ -2340,6 +2390,26 @@ function buildOptionsPanels(){
           <div class="sim-result" id="sim-result">$0</div>
           <div class="sim-explain" id="sim-explain">Adjust the sliders to see the dealer hedging requirement.</div>
         </div>
+        <!-- Gamma-weighted results table -->
+        <div style="border-top:1px solid var(--border)">
+          <div class="card-h" style="background:var(--bg2)">
+            <div class="card-t"><span class="dot" style="background:var(--violet)"></span>Gamma-Weighted Hedge Breakdown
+              <span class="info-wrap"><span class="info-icon">i</span><span class="info-tooltip">Shows hedging pressure per asset weighted by their individual Gamma exposures — higher-gamma assets exert disproportionate flow pressure relative to notional size.</span></span>
+            </div>
+          </div>
+          <table class="ftable" id="sim-gamma-table" style="width:100%">
+            <thead><tr>
+              <th>Asset</th>
+              <th class="num">Spot Δ</th>
+              <th class="num">Current IV</th>
+              <th class="num">Net Gamma</th>
+              <th class="num">Γ-Weight</th>
+              <th class="num">Hedge Req.</th>
+              <th class="num">Direction</th>
+            </tr></thead>
+            <tbody id="sim-gamma-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -2368,7 +2438,9 @@ function buildOptionsPanels(){
   <div class="tab-panel" id="panel-positioning">
     <div style="padding-top:10px">
       <div class="g2 mb">
-        <div class="card"><div class="card-h"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Gamma Exposure (GEX)</div></div>
+        <div class="card card-glow"><div class="card-h"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Gamma Exposure (GEX)
+              <span class="info-wrap"><span class="info-icon">i</span><span class="info-tooltip"><strong style="color:var(--cyan)">GEX — Gamma Exposure</strong><br/>Aggregated dealer gamma across all strikes and expiries. <strong>Positive GEX</strong>: dealers long gamma → sell rallies, buy dips — volatility dampening. <strong>Negative GEX</strong>: dealers short gamma → chase price in both directions — volatility acceleration/deceleration zones where moves extend.</span></span>
+          </div><span class="badge b-violet">∂²P/∂S²</span></div>
           <div class="card-bnp scroll-sm" id="gex-body"></div></div>
         <div class="card"><div class="card-h"><div class="card-t"><span class="dot" style="background:var(--orange)"></span>Funding Extremes</div></div>
           <div class="card-bnp scroll-sm" id="fund-body-pos"></div></div>
@@ -2701,14 +2773,25 @@ function renderSignals(){
   const colMap={vol:"sig-vol",sell:"sig-sell",squeeze:"sig-neutral",skew:"sig-vol",neutral:"sig-neutral"};
   const convCol=c=>c>=80?"var(--green)":c>=60?"var(--amber)":"var(--cyan)";
   const el=document.getElementById("signal-grid");if(!el)return;
-  el.innerHTML=sigs.slice(0,6).map(s=>`
-    <div class="sig-card ${colMap[s.sigType]||"sig-neutral"}" onclick="selectAsset('${s.s}')">
-      <div class="sig-header"><div><span class="sig-asset">${s.s}</span><span style="font-size:9px;color:var(--t4);margin-left:6px">${s.cat}</span></div><span class="sig-conv" style="color:${convCol(s.conviction)}">C:${s.conviction}</span></div>
+  el.innerHTML=sigs.slice(0,6).map((s,idx)=>{
+    // Top 2 signals get premium "glow card" treatment
+    const isGlow=idx<2&&s.conviction>=75;
+    const glowCls=isGlow?' card-glow':'';
+    return`<div class="sig-card${glowCls} ${colMap[s.sigType]||"sig-neutral"}" onclick="selectAsset('${s.s}')">
+      <div class="sig-header">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="sig-asset">${s.s}</span>
+          <span style="font-size:9px;color:var(--t4)">${s.cat}</span>
+          ${isGlow?'<span class="badge b-cyan" style="font-size:7px">TOP SIGNAL</span>':''}
+        </div>
+        <span class="sig-conv num-mono" style="color:${convCol(s.conviction)}">C:${s.conviction}</span>
+      </div>
       <div class="sig-title">${s.title}</div>
       <div class="sig-desc">${s.desc}</div>
       <div class="sig-metrics">${s.metrics.map(m=>`<div class="sig-m"><div class="l">${m.l}</div><div class="v num-mono" style="color:${m.c}">${m.v}</div></div>`).join('')}</div>
       <div class="sig-strategy">${s.strategy}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderExpectedMove(id,sym){
@@ -2943,32 +3026,63 @@ function renderSDMCategoryBreakdown(){
 let alphaFilter='all';
 function setAlphaFilter(f,el){alphaFilter=f;el.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('act'));el.classList.add('act');renderAlphaScanner();}
 
+// Generate a mini sparkline SVG for signal strength history
+function makeSparkline(seed, confidence, color, w=52, h=22){
+  const pts=8;
+  const vals=[];
+  for(let i=0;i<pts;i++){
+    // Seeded noise trending toward confidence
+    const base=confidence*(0.6+sr(seed,70+i)*0.4);
+    vals.push(Math.max(5,Math.min(98,base+(sr(seed,80+i)-0.5)*20)));
+  }
+  const mn=Math.min(...vals), mx=Math.max(...vals), range=mx-mn||1;
+  const toX=i=>((i/(pts-1))*w).toFixed(1);
+  const toY=v=>(h-(((v-mn)/range)*(h-4)+2)).toFixed(1);
+  const points=vals.map((v,i)=>`${toX(i)},${toY(v)}`).join(' ');
+  // Area fill (gradient feel)
+  const lastY=toY(vals[vals.length-1]);
+  const fillPts=`${toX(0)},${h} ${points} ${toX(pts-1)},${h}`;
+  return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="${fillPts}" fill="${color}" opacity="0.08"/>
+    <polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${toX(pts-1)}" cy="${lastY}" r="2" fill="${color}"/>
+  </svg>`;
+}
+
 function renderAlphaScanner(){
   const el=document.getElementById('alpha-scanner-body');if(!el)return;
   let signals=runAlphaScanner();
   if(alphaFilter!=='all')signals=signals.filter(s=>s.type===alphaFilter);
 
-  const typeIcons={DIVERGENCE:'↗',WHALE_FLOW:'🐋',SQUEEZE:'⚡',IV_MISPRICE:'📊'};
+  const typeIcons={DIVERGENCE:'↗',WHALE_FLOW:'⬡',SQUEEZE:'⚡',IV_MISPRICE:'≋'};
   const typeBgs={DIVERGENCE:'var(--green2)',WHALE_FLOW:'var(--cyan2)',SQUEEZE:'var(--amber2)',IV_MISPRICE:'var(--violet2)'};
-  const typeBorders={DIVERGENCE:'rgba(14,234,12,.3)',WHALE_FLOW:'rgba(14,234,12,.3)',SQUEEZE:'rgba(14,234,12,.3)',IV_MISPRICE:'rgba(168,85,247,.3)'};
+  const typeBorders={DIVERGENCE:'rgba(14,234,12,.3)',WHALE_FLOW:'rgba(14,234,12,.3)',SQUEEZE:'rgba(247,147,26,.3)',IV_MISPRICE:'rgba(168,85,247,.3)'};
+  const typeColors={DIVERGENCE:'var(--green)',WHALE_FLOW:'var(--cyan)',SQUEEZE:'var(--amber)',IV_MISPRICE:'var(--violet)'};
 
   el.innerHTML=signals.length===0?'<div style="padding:20px;text-align:center;color:var(--t4);font-size:11px">No signals matching current filter</div>':
     signals.map(s=>{
     const confColor=s.confidence>=80?'var(--green)':s.confidence>=60?'var(--amber)':'var(--cyan)';
+    const sparkColor=s.confidence>=80?'#0EEA0C':s.confidence>=60?'#F7931A':'#0EEA0C';
+    const seed=s.token.charCodeAt(0)*17+(s.token.charCodeAt(1)||0)*31;
+    const spark=makeSparkline(seed,s.confidence,sparkColor);
     return`<div class="alpha-row" onclick="selectAsset('${s.token}')">
-      <div class="alpha-icon" style="background:${typeBgs[s.type]||'var(--surface2)'};border:1px solid ${typeBorders[s.type]||'var(--border)'};color:${s.color}">${typeIcons[s.type]||'?'}</div>
+      <div class="alpha-icon" style="background:${typeBgs[s.type]||'var(--surface2)'};border:1px solid ${typeBorders[s.type]||'var(--border)'};color:${typeColors[s.type]||s.color};border-radius:4px;font-size:12px">${typeIcons[s.type]||'?'}</div>
       <div class="alpha-main">
         <div style="display:flex;align-items:center;gap:6px">
-          <span class="alpha-signal-badge" style="background:${typeBgs[s.type]};color:${s.color};border-color:${typeBorders[s.type]}">${s.signal}</span>
-          <span style="font-weight:800;font-size:12px">${s.token}</span>
+          <span class="alpha-signal-badge" style="background:${typeBgs[s.type]};color:${typeColors[s.type]||s.color};border-color:${typeBorders[s.type]}">${s.signal}</span>
+          <span style="font-weight:700;font-size:12px">${s.token}</span>
           <span style="font-size:9px;color:var(--t4)">${s.name}</span>
         </div>
         <div class="alpha-signal-desc">${s.desc}</div>
         <div class="alpha-metrics">${s.metrics.map(m=>`<span class="alpha-metric" style="color:${m.c}">${m.l}: ${m.v}</span>`).join('')}</div>
       </div>
-      <div class="alpha-conf">
+      <div class="sparkline-wrap" title="Signal strength history (last 8 periods)">
+        ${spark}
+        <span class="sparkline-label">Strength</span>
+      </div>
+      <div class="alpha-conf" style="min-width:52px">
         <div class="alpha-conf-val" style="color:${confColor}">${s.confidence}</div>
-        <div class="alpha-conf-label">CONFIDENCE</div>
+        <div class="alpha-conf-label">CONF</div>
       </div>
     </div>`;
   }).join('');
@@ -3318,6 +3432,37 @@ function updateSim(){
   const ex=document.getElementById('sim-explain');
   if(re)re.innerHTML=`<span style="color:${result.direction==='BUY'?'var(--green)':'var(--red)'}">${result.direction} ${fmt(Math.abs(result.totalUSD))}</span>`;
   if(ex)ex.textContent=result.explain;
+  // Gamma-weighted breakdown table
+  renderSimGammaTable(result,spotShift,volShift);
+}
+
+function renderSimGammaTable(result, spotShift, volShift){
+  const tbody=document.getElementById('sim-gamma-tbody');if(!tbody)return;
+  if(!result.results||!result.results.length){tbody.innerHTML='';return;}
+  // Compute gamma weights from absolute gamma exposure
+  const assets=result.results.map(r=>{
+    const t=D.find(d=>d.s===r.sym)||{};
+    const gamma=Math.abs(t.gammaExp||1);
+    return{...r,gamma,t};
+  });
+  const totalGamma=assets.reduce((s,a)=>s+a.gamma,0)||1;
+  tbody.innerHTML=assets.map(a=>{
+    const gw=a.gamma/totalGamma;
+    const gwHedge=a.hedgeUSD; // already proportional from simulateDealerHedge
+    const isPos=gwHedge>=0;
+    const ivStr=a.t.iv?`${a.t.iv.toFixed(1)}%`:'—';
+    const newIV=a.t.iv?Math.max(5,(a.t.iv+volShift)).toFixed(1)+'%':'—';
+    const gammaFmt=a.gamma>=1e6?fmt(a.gamma):`$${a.gamma.toFixed(0)}`;
+    return`<tr>
+      <td><strong style="font-size:12px">${a.sym}</strong></td>
+      <td class="num" style="color:${spotShift>=0?'var(--green)':'var(--red)'}">${spotShift>=0?'+':''}${spotShift}%</td>
+      <td class="num" style="color:var(--amber)">${ivStr} → <span style="color:${volShift>0?'var(--red)':'var(--green)'}">${newIV}</span></td>
+      <td class="num num-mono" style="color:var(--violet)">${fmt(Math.abs(a.gamma))}</td>
+      <td class="num num-mono">${(gw*100).toFixed(1)}%</td>
+      <td class="num num-mono" style="color:${isPos?'var(--green)':'var(--red)'};font-weight:700">${isPos?'+':''}${fmt(Math.abs(gwHedge))}</td>
+      <td class="num"><span class="badge ${isPos?'b-green':'b-red'}">${isPos?'BUY':'SELL'}</span></td>
+    </tr>`;
+  }).join('');
 }
 
 // ═══ INTERACTIONS ═══════════════════════════════════════════════
