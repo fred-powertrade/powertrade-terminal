@@ -576,6 +576,73 @@ header{background:var(--header-bg);border-bottom:1px solid var(--border);positio
   .kpi-card{min-width:120px;flex:0 0 auto}
   .theme-toggle .theme-label{display:none}
 }
+
+/* ═══ INFO ICON + TOOLTIP ═══ */
+.info-wrap{position:relative;display:inline-flex;align-items:center}
+.info-icon{width:14px;height:14px;border-radius:50%;background:var(--surface4);border:1px solid var(--border2);color:var(--t4);font-size:8px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;margin-left:5px;flex-shrink:0;font-style:normal;transition:all .15s;user-select:none}
+.info-icon:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan3)}
+.info-tooltip{visibility:hidden;opacity:0;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);border-radius:4px;padding:8px 10px;font-size:10px;font-weight:400;color:var(--t2);line-height:1.5;white-space:normal;width:220px;z-index:999;pointer-events:none;transition:opacity .15s,visibility .15s;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.info-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid var(--surface3)}
+.info-wrap:hover .info-tooltip{visibility:visible;opacity:1}
+
+/* ═══ LITE MODE GAUGE STYLES ═══ */
+.lite-gauge-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px}
+.lite-gauge{background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:16px;transition:border-color .15s}
+.lite-gauge:hover{border-color:var(--border2)}
+.lite-gauge-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t4);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.lite-gauge-value{font-size:22px;font-weight:900;font-family:var(--font-mono);line-height:1.1;margin-bottom:4px}
+.lite-gauge-sub{font-size:10px;color:var(--t3);line-height:1.4}
+.lite-gauge-bar{height:6px;background:var(--surface3);border-radius:3px;margin-top:8px;overflow:hidden;position:relative}
+.lite-gauge-fill{height:100%;border-radius:3px;position:absolute;top:0;left:0;transition:width .4s ease}
+.lite-pressure-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border)}
+.lite-pressure-row:last-child{border-bottom:none}
+.lite-pressure-sym{font-weight:800;font-size:12px;width:52px;flex-shrink:0}
+.lite-pressure-label{flex:1;font-size:10px;font-weight:600;color:var(--t2)}
+.lite-pressure-badge{font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;border:1px solid;flex-shrink:0}
+.lite-breakout-row{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.lite-breakout-row:hover{background:rgba(255,255,255,.012)}
+.lite-breakout-row:last-child{border-bottom:none}
+
+/* ═══ DEEP-DIVE MODAL ═══ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto}
+.modal-overlay.hidden{display:none}
+.modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:8px;width:100%;max-width:780px;overflow:hidden;animation:modalIn .15s ease;position:relative;flex-shrink:0}
+@keyframes modalIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+.modal-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;gap:14px}
+.modal-icon{width:42px;height:42px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;color:#fff}
+.modal-title{font-size:18px;font-weight:900;letter-spacing:-.02em}
+.modal-subtitle{font-size:10px;color:var(--t3);margin-top:1px}
+.modal-close{margin-left:auto;background:none;border:none;color:var(--t3);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:4px;font-family:inherit;line-height:1;transition:all .12s;flex-shrink:0}
+.modal-close:hover{background:var(--surface3);color:var(--t1)}
+.modal-alpha-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:.04em;border:1px solid;flex-shrink:0}
+.modal-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.modal-kpi{background:var(--surface);padding:12px;text-align:center}
+.modal-kpi .l{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--t4);margin-bottom:3px}
+.modal-kpi .v{font-size:15px;font-weight:800;font-family:var(--font-mono)}
+.modal-body{padding:16px 20px}
+.modal-section{margin-bottom:18px}
+.modal-section-title{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:10px;display:flex;align-items:center;gap:6px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.modal-fv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.modal-fv-card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px;text-align:center}
+.modal-fv-card .label{font-size:7.5px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.modal-fv-card .price{font-size:15px;font-weight:800;font-family:var(--font-mono)}
+.modal-fv-card .delta{font-size:9.5px;font-weight:600;margin-top:2px;font-family:var(--font-mono)}
+.modal-indicators{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.modal-ind{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:10px;text-align:center}
+.modal-ind .l{font-size:7.5px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.modal-ind .v{font-size:15px;font-weight:800;font-family:var(--font-mono)}
+.modal-ind .sub{font-size:8px;color:var(--t4);margin-top:2px}
+/* Historical comparison table */
+.hist-table{width:100%;border-collapse:collapse;font-size:11px}
+.hist-table th{padding:6px 10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);text-align:left;border-bottom:1px solid var(--border);background:var(--bg2)}
+.hist-table th:not(:first-child){text-align:right}
+.hist-table td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.04);font-family:var(--font-mono)}
+.hist-table td:not(:first-child){text-align:right}
+.hist-table td:first-child{font-family:inherit;font-weight:600;color:var(--t2);font-size:10.5px}
+.hist-table tr:last-child td{border-bottom:none}
+.hist-delta-pos{color:var(--green)}
+.hist-delta-neg{color:var(--red)}
+.hist-delta-neu{color:var(--t3)}
 </style>
 </head>
 <body>
@@ -592,6 +659,7 @@ header{background:var(--header-bg);border-bottom:1px solid var(--border);positio
 
   <!-- Mode Toggle -->
   <div class="mode-toggle">
+    <button class="mode-btn" id="mode-lite" onclick="setMode('lite')">LITE</button>
     <button class="mode-btn active" id="mode-spot" onclick="setMode('spot')">SPOT</button>
     <button class="mode-btn" id="mode-options" onclick="setMode('options')">OPTIONS</button>
   </div>
@@ -761,24 +829,25 @@ function renderKPIRow(){
 }
 
 // ═══ MODE STATE ═══════════════════════════════════════════════
-let currentMode='spot'; // 'spot' or 'options'
+let currentMode='spot'; // 'lite', 'spot', or 'options'
 
 function setMode(mode){
   currentMode=mode;
+  document.getElementById('mode-lite').classList.toggle('active',mode==='lite');
   document.getElementById('mode-spot').classList.toggle('active',mode==='spot');
   document.getElementById('mode-options').classList.toggle('active',mode==='options');
   // Show/hide header stats based on mode
   const ivStat=document.getElementById('hdr-iv-stat');
   const skewStat=document.getElementById('hdr-skew-stat');
   const skewDiv=document.getElementById('hdr-div-skew');
-  if(mode==='spot'){
-    if(ivStat)ivStat.style.display='none';
-    if(skewStat)skewStat.style.display='none';
-    if(skewDiv)skewDiv.style.display='none';
-  } else {
+  if(mode==='options'){
     if(ivStat)ivStat.style.display='';
     if(skewStat)skewStat.style.display='';
     if(skewDiv)skewDiv.style.display='';
+  } else {
+    if(ivStat)ivStat.style.display='none';
+    if(skewStat)skewStat.style.display='none';
+    if(skewDiv)skewDiv.style.display='none';
   }
   buildTabs();
   buildPanels();
@@ -866,7 +935,14 @@ function gen(){
       ivChg:+ivChg.toFixed(1), ivRank, ivRv:+(currentIV-rv30).toFixed(1),
       skew25d, gammaExp, conviction,
       // Second-order Greeks (new)
-      vanna:0, charm:0, netVanna:0, netCharm:0
+      vanna:0, charm:0, netVanna:0, netCharm:0,
+      // Historical mock data for Deep-Dive modal
+      hist:{
+        price:{h24: +(t.p*(1-((sr(s,40)-.5)*.12))).toFixed(2), d7: +(t.p*(1-((sr(s,41)-.45)*.28))).toFixed(2), d30: +(t.p*(1-((sr(s,42)-.40)*.55))).toFixed(2)},
+        iv:{now: +currentIV.toFixed(1), h24: +(currentIV*(0.88+sr(s,43)*.24)).toFixed(1), d7: +(currentIV*(0.78+sr(s,44)*.36)).toFixed(1), d30: +(currentIV*(0.70+sr(s,45)*.42)).toFixed(1)},
+        sent:{now: Math.floor(sr(s,7)*80+10), h24: Math.floor(sr(s,46)*80+10), d7: Math.floor(sr(s,47)*80+10), d30: Math.floor(sr(s,48)*80+10)},
+        fund:{now: +((sr(s,12)-.5)*.065).toFixed(4), h24: +((sr(s,49)-.5)*.065).toFixed(4), d7: +((sr(s,50)-.5)*.065).toFixed(4), d30: +((sr(s,51)-.5)*.065).toFixed(4)}
+      }
     };
   });
 }
@@ -1853,7 +1929,13 @@ function calcHypeScore(t){
 // ═══ TAB / PANEL BUILDER ═══════════════════════════════════════
 function buildTabs(){
   const el=document.getElementById('main-tabs-inner');if(!el)return;
-  if(currentMode==='spot'){
+  if(currentMode==='lite'){
+    el.innerHTML=`
+      <div class="mtab active" onclick="switchTab('lite-dashboard')">Dashboard</div>
+      <div class="mtab" onclick="switchTab('lite-movers')">Top Movers</div>
+      <div class="mtab" onclick="switchTab('lite-hype')">Hype Score</div>
+      <div class="mtab" onclick="switchTab('intel')">News</div>`;
+  } else if(currentMode==='spot'){
     el.innerHTML=`
       <div class="mtab active" onclick="switchTab('dashboard')">Dashboard</div>
       <div class="mtab" onclick="switchTab('sentiment')">Sentiment Map</div>
@@ -1880,11 +1962,79 @@ function buildTabs(){
 
 function buildPanels(){
   const el=document.getElementById('tab-panels');if(!el)return;
-  if(currentMode==='spot'){
+  if(currentMode==='lite'){
+    el.innerHTML=buildLitePanels();
+  } else if(currentMode==='spot'){
     el.innerHTML=buildSpotPanels();
   } else {
     el.innerHTML=buildOptionsPanels();
   }
+}
+
+function buildLitePanels(){
+  return`
+  <!-- LITE: Dashboard -->
+  <div class="tab-panel active" id="panel-lite-dashboard">
+    <div style="padding-top:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div class="section-title" style="margin-bottom:0">Market Overview</div>
+        <span class="badge b-cyan">LITE MODE</span>
+        <span style="font-size:9.5px;color:var(--t4);margin-left:4px">Simplified view for retail traders · Click any asset for a deep dive</span>
+      </div>
+      <!-- Big 4 gauges -->
+      <div class="lite-gauge-grid" id="lite-gauges"></div>
+      <!-- Dealer Pressure list -->
+      <div class="g2 mb">
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--amber)"></span>Dealer Pressure</div>
+            <div class="info-wrap"><span class="info-icon">i</span><span class="info-tooltip" style="width:240px"><strong style="color:var(--cyan)">What it means:</strong> Whether market makers are likely buying or selling to hedge their options positions.<br/><strong style="color:var(--cyan)">How it's calculated:</strong> Net Gamma Exposure (GEX) — positive means dealers buy dips; negative means they amplify moves.<br/><strong style="color:var(--cyan)">How to trade this:</strong> When dealers are buying, use support bounces. When selling, expect extended moves.</span></div>
+          </div>
+          <div class="card-bnp scroll-sm" id="lite-dealer-pressure"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--green)"></span>Trend Breakouts</div></div>
+          <div class="card-bnp scroll-sm" id="lite-breakouts"></div>
+        </div>
+      </div>
+      <!-- Market strip -->
+      <div class="mkt-strip" id="lite-mkt-strip" style="grid-template-columns:repeat(4,1fr)"></div>
+    </div>
+  </div>
+  <!-- LITE: Top Movers -->
+  <div class="tab-panel" id="panel-lite-movers">
+    <div style="padding-top:12px">
+      <div class="section-title">Top Movers — 24H</div>
+      <div class="g2 mb">
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--green)"></span>Gainers</div></div>
+          <div class="card-bnp scroll-md" id="lite-gainers"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--red)"></span>Losers</div></div>
+          <div class="card-bnp scroll-md" id="lite-losers"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- LITE: Hype Score -->
+  <div class="tab-panel" id="panel-lite-hype">
+    <div style="padding-top:12px">
+      <div class="section-title">Retail Hype Score</div>
+      <div class="card mb">
+        <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--pink)"></span>Hype Meter — X/Google Signal
+          <div class="info-wrap"><span class="info-icon">i</span><span class="info-tooltip" style="width:240px"><strong style="color:var(--cyan)">What it means:</strong> A 0–100 score combining social volume, price momentum, and search trends.<br/><strong style="color:var(--cyan)">How it's calculated:</strong> Volume spike (30%) + Sentiment score (40%) + Price momentum (30%).<br/><strong style="color:var(--cyan)">How to trade this:</strong> Scores above 70 often signal local tops. Use as a contrarian indicator or to spot momentum breakouts early.</span></div>
+        </div></div>
+        <div class="card-bnp scroll-md" id="lite-hype-list"></div>
+      </div>
+    </div>
+  </div>
+  <!-- LITE: News (reuses intel panel id) -->
+  <div class="tab-panel" id="panel-intel">
+    <div style="padding-top:10px">
+      <div class="card"><div class="card-h"><div class="card-t"><span class="dot" style="background:var(--pink)"></span>Live News</div><span class="badge b-cyan">LIVE</span></div>
+        <div class="card-bnp scroll-md" id="news-full"></div></div>
+    </div>
+  </div>`;
 }
 
 function buildSpotPanels(){
@@ -2689,11 +2839,37 @@ function renderRegime(){
   const panel=document.getElementById("regime-panel");
   if(panel){
     panel.style.borderColor=r.color;
-    const rn=document.getElementById("regime-name");if(rn){rn.textContent=r.label;rn.style.color=r.color;}
+    const rn=document.getElementById("regime-name");if(rn){
+      const infoMap={
+        'VOL COMPRESSION':{mean:'IV and historical volatility are in equilibrium — options are cheap.',calc:'Comparing the 30-day Implied Volatility Rank (IVR). Below 25th percentile = compression.',trade:'Delta-neutral strategies like Iron Condors or Calendar Spreads to harvest theta.'},
+        'SQUEEZE RISK':{mean:'Extreme funding rates combined with call skew signal a potential squeeze event.',calc:'Funding rate above 0.03% plus 25Δ call skew above +2.',trade:'Put Spreads to hedge longs; fade any call-side rallies with defined risk.'},
+        'VOL EXPANSION':{mean:'IV is elevated and dealer positioning (negative GEX) amplifies price moves.',calc:'IV Rank above 70th percentile with over 55% of tokens in negative GEX.',trade:'Sell premium via Short Straddles or Iron Condors into IV peaks.'},
+        'RISK-ON':{mean:'Strong directional momentum with positive sentiment — trend is your friend.',calc:'BTC up more than 10% over 7 days with positive call skew.',trade:'Bull Calls, Long Perps, or momentum breakout entries with tight stops.'},
+        'NEUTRAL':{mean:'No dominant signal — IV fair, funding balanced, no trend.',calc:'No extreme readings across IVR, funding, skew, or GEX.',trade:'Selective positions; use Iron Condors on high-IVR assets or wait for setup.'}
+      };
+      const info=infoMap[r.label]||infoMap['NEUTRAL'];
+      rn.innerHTML=`${r.label} <span class="info-wrap" style="display:inline-flex;vertical-align:middle;margin-left:4px"><span class="info-icon">i</span><span class="info-tooltip" style="width:260px;font-size:10px"><strong style="color:var(--cyan)">What it means:</strong> ${info.mean}<br/><br/><strong style="color:var(--cyan)">How it's calculated:</strong> ${info.calc}<br/><br/><strong style="color:var(--cyan)">How to trade this:</strong> ${info.trade}</span></span>`;
+      rn.style.color=r.color;
+    }
     const rs=document.getElementById("regime-sub");if(rs)rs.textContent=r.sub;
     const rm=document.getElementById("regime-meta");if(rm)rm.innerHTML=r.meta.map(m=>`<div class="regime-m-item"><span class="l">${m.l}</span><span class="v num-mono" style="color:${m.c}">${m.v}</span></div>`).join('');
     const ra=document.getElementById("regime-actions");if(ra)ra.innerHTML=r.trades.map(tr=>`<span class="regime-action-tag" style="background:${r.glow};border-color:${r.color};color:${r.color}">${tr}</span>`).join('');
   }
+}
+
+const SIG_INFO={
+  'Long Vol Opportunity':{mean:'Implied Volatility is very cheap relative to its historical range.',calc:'IV Rank below 18th percentile — options are priced below their historical norm.',trade:'Buy ATM Straddles or Strangles to benefit from any move in either direction.'},
+  'Sell Vol — IV Rich':{mean:'Implied Volatility is elevated — the market is paying too much for options.',calc:'IV Rank above 80th percentile with IV significantly above Realized Volatility.',trade:'Sell premium via Iron Condors (neutral) or Short Straddles into IV peaks.'},
+  'Put Skew Extreme':{mean:'Put options command an unusually high premium vs calls — fear is elevated.',calc:'25-delta put skew more than -4% below ATM IV.',trade:'Risk Reversals (sell puts, buy calls) to fade the skew, or wait for mean reversion.'},
+  'Call Skew Elevated':{mean:'Call options are unusually expensive — crowded bullish positioning.',calc:'25-delta call skew more than +4% above ATM IV.',trade:'Sell OTM calls or use Bear Call Spreads to collect premium on the skew.'},
+  'Crowded Long':{mean:'Funding is highly positive — too many traders are long via perpetuals.',calc:'Perpetual funding rate above +0.04% (8h), signaling long-crowding.',trade:'Put Spreads or reduce long exposure; wait for funding to normalize.'},
+  'Crowded Short':{mean:'Funding is deeply negative — the market is net short via perpetuals.',calc:'Perpetual funding rate below -0.04% (8h), signaling short-crowding.',trade:'Call Spreads or long the spot — short squeezes become increasingly likely.'},
+  'Neg GEX — Amplification':{mean:'Dealers are short gamma — they chase price, amplifying both rallies and drops.',calc:'Gamma Exposure (GEX) deeply negative relative to market cap.',trade:'Long Straddles or momentum strategies — expect extended, volatile moves.'}
+};
+function buildSigInfoIcon(s){
+  const info=SIG_INFO[s.title];
+  if(!info)return'';
+  return`<span class="info-wrap"><span class="info-icon">i</span><span class="info-tooltip" style="width:240px"><strong style="color:var(--cyan)">What it means:</strong> ${info.mean}<br/><br/><strong style="color:var(--cyan)">How it's calculated:</strong> ${info.calc}<br/><br/><strong style="color:var(--cyan)">How to trade this:</strong> ${info.trade}</span></span>`;
 }
 
 function renderSignals(){
@@ -2704,7 +2880,7 @@ function renderSignals(){
   el.innerHTML=sigs.slice(0,6).map(s=>`
     <div class="sig-card ${colMap[s.sigType]||"sig-neutral"}" onclick="selectAsset('${s.s}')">
       <div class="sig-header"><div><span class="sig-asset">${s.s}</span><span style="font-size:9px;color:var(--t4);margin-left:6px">${s.cat}</span></div><span class="sig-conv" style="color:${convCol(s.conviction)}">C:${s.conviction}</span></div>
-      <div class="sig-title">${s.title}</div>
+      <div class="sig-title" style="display:flex;align-items:center;gap:5px">${s.title}${buildSigInfoIcon(s)}</div>
       <div class="sig-desc">${s.desc}</div>
       <div class="sig-metrics">${s.metrics.map(m=>`<div class="sig-m"><div class="l">${m.l}</div><div class="v num-mono" style="color:${m.c}">${m.v}</div></div>`).join('')}</div>
       <div class="sig-strategy">${s.strategy}</div>
@@ -3323,8 +3499,174 @@ function updateSim(){
 // ═══ INTERACTIONS ═══════════════════════════════════════════════
 let fvAsset="BTC";
 function setFVAsset(sym,el){fvAsset=sym;el.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('act'));el.classList.add('act');renderFVPanel();renderProbCone();}
-function selectAsset(sym){selectedAsset=sym;}
-function clearSelected(e){e.stopPropagation();selectedAsset=null;}
+function selectAsset(sym){
+  selectedAsset=sym;
+  openDeepDive(sym);
+}
+
+function openDeepDive(sym){
+  const t=D.find(d=>d.s===sym);if(!t)return;
+  const overlay=document.getElementById('deepdive-overlay');
+  const box=document.getElementById('deepdive-box');
+  if(!overlay||!box)return;
+
+  const fv=calcFairValue(t);
+  const alphaSignals=runAlphaScanner();
+  const topSignal=alphaSignals.find(s=>s.token===sym);
+  const alphaBadge=topSignal?`<span class="modal-alpha-badge" style="background:rgba(14,234,12,.08);border-color:rgba(14,234,12,.25);color:var(--green)">${topSignal.signal}</span>`:'<span class="modal-alpha-badge" style="background:var(--surface3);border-color:var(--border2);color:var(--t3)">NO ACTIVE SIGNAL</span>';
+
+  const chg24hColor=t.ch24h>=0?'var(--green)':'var(--red)';
+  const chgSign=t.ch24h>=0?'+':'';
+
+  const tokenColors={BTC:'#f7931a',ETH:'#7A57DD',SOL:'#9945ff',BNB:'#F3BA2F',XRP:'#346AA9',DOGE:'#C2A633'};
+  const iconBg=tokenColors[sym]||'var(--surface4)';
+
+  const fvDelta=fv?((fv.consensus-t.p)/t.p*100):0;
+  const fvColor=fvDelta>0?'var(--green)':fvDelta<0?'var(--red)':'var(--t3)';
+  const rsiColor=t.rsi>70?'var(--red)':t.rsi<30?'var(--green)':'var(--t2)';
+  const fundColor=t.fund>0.03?'var(--red)':t.fund<-0.01?'var(--green)':'var(--t2)';
+
+  const h=t.hist||{};
+  const hPrice=h.price||{};
+  const hIV=h.iv||{};
+  const hSent=h.sent||{};
+  const hFund=h.fund||{};
+
+  function priceDelta(now,old){const d=(now-old)/old*100;return`<span class="${d>0?'hist-delta-pos':d<0?'hist-delta-neg':'hist-delta-neu'}">${d>0?'+':''}${d.toFixed(1)}%</span>`;}
+  function ivDelta(now,old){const d=now-old;return`<span class="${d<0?'hist-delta-pos':d>0?'hist-delta-neg':'hist-delta-neu'}">${d>0?'+':''}${d.toFixed(1)}pp</span>`;}
+  function sentDelta(now,old){const d=now-old;return`<span class="${d>0?'hist-delta-pos':d<0?'hist-delta-neg':'hist-delta-neu'}">${d>0?'+':''}${d}</span>`;}
+  function fundDelta(now,old){const d=(now-old)*100;return`<span class="${d<0?'hist-delta-pos':d>0?'hist-delta-neg':'hist-delta-neu'}">${d>0?'+':''}${d.toFixed(3)}%</span>`;}
+
+  box.innerHTML=`
+    <div class="modal-header">
+      <div class="modal-icon" style="background:${iconBg}">${sym.slice(0,2)}</div>
+      <div>
+        <div class="modal-title">${t.n} <span style="color:var(--t4);font-size:12px;font-weight:400">${sym}</span></div>
+        <div class="modal-subtitle">${t.cat} · <span class="num-mono" style="color:${chg24hColor}">${chgSign}${t.ch24h}% (24H)</span></div>
+      </div>
+      ${alphaBadge}
+      <button class="modal-close" onclick="closeDeepDive()">×</button>
+    </div>
+    <div class="modal-kpis">
+      <div class="modal-kpi"><div class="l">Price</div><div class="v num-mono" style="color:var(--t1)">${fPr(t.p)}</div></div>
+      <div class="modal-kpi"><div class="l">24H Change</div><div class="v num-mono" style="color:${chg24hColor}">${chgSign}${t.ch24h}%</div></div>
+      <div class="modal-kpi"><div class="l">Market Cap</div><div class="v num-mono" style="color:var(--cyan)">${fmt(t.mc)}</div></div>
+      <div class="modal-kpi"><div class="l">Volume 24H</div><div class="v num-mono">${fmt(t.vol)}</div></div>
+      <div class="modal-kpi"><div class="l">Conviction</div><div class="v num-mono" style="color:${t.conviction>=70?'var(--green)':t.conviction>=45?'var(--amber)':'var(--t3)'}">${t.conviction}</div></div>
+    </div>
+    <div class="modal-body">
+      ${fv?`
+      <div class="modal-section">
+        <div class="modal-section-title"><span class="dot" style="background:var(--cyan);width:5px;height:5px;border-radius:50%;flex-shrink:0"></span>Valuation</div>
+        <div class="modal-fv-grid">
+          <div class="modal-fv-card">
+            <div class="label">Options Model</div>
+            <div class="price num-mono" style="color:var(--amber)">${fPr(fv.optionsFV)}</div>
+            <div class="delta num-mono" style="color:${fv.optionsFV>t.p?'var(--green)':'var(--red)'}">${fv.optionsFV>t.p?'+':''}${((fv.optionsFV-t.p)/t.p*100).toFixed(1)}%</div>
+          </div>
+          <div class="modal-fv-card">
+            <div class="label">Momentum Model</div>
+            <div class="price num-mono" style="color:var(--violet)">${fPr(fv.momentumFV)}</div>
+            <div class="delta num-mono" style="color:${fv.momentumFV>t.p?'var(--green)':'var(--red)'}">${fv.momentumFV>t.p?'+':''}${((fv.momentumFV-t.p)/t.p*100).toFixed(1)}%</div>
+          </div>
+          <div class="modal-fv-card">
+            <div class="label">Positioning Model</div>
+            <div class="price num-mono" style="color:var(--teal)">${fPr(fv.posFV)}</div>
+            <div class="delta num-mono" style="color:${fv.posFV>t.p?'var(--green)':'var(--red)'}">${fv.posFV>t.p?'+':''}${((fv.posFV-t.p)/t.p*100).toFixed(1)}%</div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:12px 14px;text-align:center">
+          <div style="font-size:8px;color:var(--t4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Consensus Fair Value · ${(fv.confidence).toFixed(0)}% Confidence</div>
+          <div style="font-size:22px;font-weight:900;font-family:var(--font-mono);color:${fvColor}">${fPr(fv.consensus)}</div>
+          <div style="font-size:10px;color:${fvColor};margin-top:2px;font-family:var(--font-mono)">${fvDelta>0?'+':''}${fvDelta.toFixed(1)}% vs spot · <span style="color:var(--t3)">Bias: ${fv.bias}</span></div>
+        </div>
+      </div>`:''}
+
+      <div class="modal-section">
+        <div class="modal-section-title"><span class="dot" style="background:var(--violet);width:5px;height:5px;border-radius:50%;flex-shrink:0"></span>Key Indicators</div>
+        <div class="modal-indicators">
+          <div class="modal-ind">
+            <div class="l">RSI (14)</div>
+            <div class="v num-mono" style="color:${rsiColor}">${t.rsi}</div>
+            <div class="sub">${t.rsi>70?'Overbought':t.rsi<30?'Oversold':'Neutral'}</div>
+          </div>
+          <div class="modal-ind">
+            <div class="l">Funding Rate</div>
+            <div class="v num-mono" style="color:${fundColor}">${(t.fund*100).toFixed(3)}%</div>
+            <div class="sub">${t.fund>0.03?'Crowded Long':t.fund<-0.01?'Crowded Short':'Balanced'}</div>
+          </div>
+          <div class="modal-ind">
+            <div class="l">L/S Ratio</div>
+            <div class="v num-mono" style="color:${t.lsRatio>1.1?'var(--green)':t.lsRatio<0.9?'var(--red)':'var(--t2)'}">${t.lsRatio.toFixed(2)}</div>
+            <div class="sub">${t.lsRatio>1.1?'Longs Dominant':t.lsRatio<0.9?'Shorts Dominant':'Balanced'}</div>
+          </div>
+          <div class="modal-ind">
+            <div class="l">IV Rank</div>
+            <div class="v num-mono" style="color:${t.ivRank>70?'var(--red)':t.ivRank<25?'var(--green)':'var(--amber)'}">${t.ivRank}%</div>
+            <div class="sub">${t.ivRank>70?'Vol Expensive':t.ivRank<25?'Vol Cheap':'Vol Fair'}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title"><span class="dot" style="background:var(--blue);width:5px;height:5px;border-radius:50%;flex-shrink:0"></span>Historical Comparison</div>
+        <table class="hist-table">
+          <thead><tr>
+            <th>Metric</th>
+            <th>Now</th>
+            <th>24H Ago <span style="font-weight:400;color:var(--t4)">(delta)</span></th>
+            <th>7D Ago <span style="font-weight:400;color:var(--t4)">(delta)</span></th>
+            <th>30D Ago <span style="font-weight:400;color:var(--t4)">(delta)</span></th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td>Price</td>
+              <td class="num-mono">${fPr(t.p)}</td>
+              <td class="num-mono">${fPr(hPrice.h24||t.p)} ${priceDelta(t.p,hPrice.h24||t.p)}</td>
+              <td class="num-mono">${fPr(hPrice.d7||t.p)} ${priceDelta(t.p,hPrice.d7||t.p)}</td>
+              <td class="num-mono">${fPr(hPrice.d30||t.p)} ${priceDelta(t.p,hPrice.d30||t.p)}</td>
+            </tr>
+            <tr>
+              <td>Implied Vol (IV)</td>
+              <td class="num-mono">${t.iv}%</td>
+              <td class="num-mono">${hIV.h24||t.iv}% ${ivDelta(t.iv,hIV.h24||t.iv)}</td>
+              <td class="num-mono">${hIV.d7||t.iv}% ${ivDelta(t.iv,hIV.d7||t.iv)}</td>
+              <td class="num-mono">${hIV.d30||t.iv}% ${ivDelta(t.iv,hIV.d30||t.iv)}</td>
+            </tr>
+            <tr>
+              <td>Social Sentiment</td>
+              <td class="num-mono">${hSent.now||t.sent}/100</td>
+              <td class="num-mono">${hSent.h24||t.sent}/100 ${sentDelta(hSent.now||t.sent,hSent.h24||t.sent)}</td>
+              <td class="num-mono">${hSent.d7||t.sent}/100 ${sentDelta(hSent.now||t.sent,hSent.d7||t.sent)}</td>
+              <td class="num-mono">${hSent.d30||t.sent}/100 ${sentDelta(hSent.now||t.sent,hSent.d30||t.sent)}</td>
+            </tr>
+            <tr>
+              <td>Funding Rate</td>
+              <td class="num-mono">${((hFund.now||t.fund)*100).toFixed(3)}%</td>
+              <td class="num-mono">${((hFund.h24||t.fund)*100).toFixed(3)}% ${fundDelta(hFund.now||t.fund,hFund.h24||t.fund)}</td>
+              <td class="num-mono">${((hFund.d7||t.fund)*100).toFixed(3)}% ${fundDelta(hFund.now||t.fund,hFund.d7||t.fund)}</td>
+              <td class="num-mono">${((hFund.d30||t.fund)*100).toFixed(3)}% ${fundDelta(hFund.now||t.fund,hFund.d30||t.fund)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  overlay.classList.remove('hidden');
+  document.body.style.overflow='hidden';
+}
+
+function closeDeepDive(e){
+  if(e&&e.target!==document.getElementById('deepdive-overlay'))return;
+  document.getElementById('deepdive-overlay').classList.add('hidden');
+  document.body.style.overflow='';
+  selectedAsset=null;
+}
+
+// Close on Escape key
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDeepDive();});
+
+function clearSelected(e){e.stopPropagation();closeDeepDive();}
 function setTMMode(m,el){tmMode=m;el.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('act'));el.classList.add('act');renderTreemap();}
 function setGLTab(t,el){glTab=t;el.parentElement.querySelectorAll('.mtab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderGL();}
 function setBubTF(tf,el){bubTF=tf;el.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('act'));el.classList.add('act');renderBubbles();}
@@ -3339,6 +3681,9 @@ function switchTab(t){
   const panel=document.getElementById("panel-"+t);if(panel)panel.classList.add('active');
   if(event&&event.target)event.target.classList.add('active');
   // Tab-specific renders
+  if(t==='lite-dashboard')renderLiteDashboard();
+  if(t==='lite-movers')renderLiteMovers();
+  if(t==='lite-hype')renderLiteHype();
   if(t==='greeks'){renderVanna();renderCharm();renderVannaCharmSignal();}
   if(t==='simulator')updateSim();
   if(t==='optionslab'){renderIVHeatmap("iv-heatmap-full");renderIVRV("ivrv-body-full");renderFlowFeed("flow-feed-full","all");renderSkewMonitor();}
@@ -3349,6 +3694,7 @@ function switchTab(t){
   if(t==='sentiment'){renderSentimentWordmap();renderSDMDeltaList();renderSDMCategoryBreakdown();}
   if(t==='alpha'){renderAlphaScanner();}
   if(t==='stresstest'){renderStressScenarios();updateStressTest();}
+  if(t==='intel')renderNews("news-full");
 }
 
 // ═══ TICK ═══════════════════════════════════════════════════════
@@ -3368,18 +3714,149 @@ function tick(){
   FLOWS.forEach(f=>{if(f.age!=null)f.age++;});
 }
 
+// ═══ LITE MODE RENDERERS ════════════════════════════════════════
+function renderLiteDashboard(){
+  renderLiteGauges();
+  renderLiteDealerPressure();
+  renderLiteBreakouts();
+  renderLiteMktStrip();
+}
+
+function renderLiteGauges(){
+  const el=document.getElementById('lite-gauges');if(!el)return;
+  const btc=D.find(t=>t.s==='BTC')||{p:0,ch24h:0,iv:0,sent:50};
+  const avgFund=D.slice(0,12).reduce((s,t)=>s+(t.fund||0),0)/12;
+  const negGEXPct=D.filter(t=>t.gammaExp<0).length/D.length*100;
+
+  const chgColor=btc.ch24h>=0?'var(--green)':'var(--red)';
+  const sentColor=btc.sent>60?'var(--green)':btc.sent<40?'var(--red)':'var(--amber)';
+  const sentLabel=btc.sent>70?'Extreme Greed':btc.sent>55?'Greed':btc.sent>45?'Neutral':btc.sent>30?'Fear':'Extreme Fear';
+  const dealerLabel=negGEXPct>55?'Selling (Amplifying)':negGEXPct>40?'Mixed':'Buying (Dampening)';
+  const dealerColor=negGEXPct>55?'var(--red)':negGEXPct>40?'var(--amber)':'var(--green)';
+
+  el.innerHTML=`
+    <div class="lite-gauge">
+      <div class="lite-gauge-label"><span class="dot" style="background:var(--btc);width:5px;height:5px;border-radius:50%"></span>BTC Price</div>
+      <div class="lite-gauge-value" style="color:var(--btc)">${fPr(btc.p)}</div>
+      <div class="lite-gauge-sub" style="color:${chgColor}">${btc.ch24h>=0?'+':''}${btc.ch24h}% in last 24 hours</div>
+    </div>
+    <div class="lite-gauge">
+      <div class="lite-gauge-label"><span class="dot" style="background:var(--amber);width:5px;height:5px;border-radius:50%"></span>Market Sentiment</div>
+      <div class="lite-gauge-value" style="color:${sentColor}">${sentLabel}</div>
+      <div class="lite-gauge-sub">Fear &amp; Greed Index: ${btc.sent}/100</div>
+      <div class="lite-gauge-bar"><div class="lite-gauge-fill" style="width:${btc.sent}%;background:${sentColor}"></div></div>
+    </div>
+    <div class="lite-gauge">
+      <div class="lite-gauge-label"><span class="dot" style="background:var(--violet);width:5px;height:5px;border-radius:50%"></span>Dealer Pressure</div>
+      <div class="lite-gauge-value" style="color:${dealerColor}">${dealerLabel}</div>
+      <div class="lite-gauge-sub">${negGEXPct.toFixed(0)}% of assets in Negative GEX zone</div>
+      <div class="lite-gauge-bar"><div class="lite-gauge-fill" style="width:${negGEXPct}%;background:${dealerColor}"></div></div>
+    </div>
+    <div class="lite-gauge">
+      <div class="lite-gauge-label"><span class="dot" style="background:var(--blue);width:5px;height:5px;border-radius:50%"></span>Funding Rate</div>
+      <div class="lite-gauge-value" style="color:${avgFund>0.02?'var(--red)':avgFund<-0.01?'var(--green)':'var(--t2)'}">${avgFund>0.02?'Longs Paying':avgFund<-0.01?'Shorts Paying':'Balanced'}</div>
+      <div class="lite-gauge-sub">Avg funding: ${(avgFund*100).toFixed(3)}% per 8H</div>
+    </div>`;
+}
+
+function renderLiteDealerPressure(){
+  const el=document.getElementById('lite-dealer-pressure');if(!el)return;
+  const tokens=[...D].filter(t=>t.mc>2e9).sort((a,b)=>Math.abs(b.gammaExp)-Math.abs(a.gammaExp)).slice(0,8);
+  el.innerHTML=tokens.map(t=>{
+    const isBuying=t.gammaExp>0;
+    const label=isBuying?'BUYING':'SELLING';
+    const color=isBuying?'var(--green)':'var(--red)';
+    const bg=isBuying?'var(--green2)':'var(--red2)';
+    const border=isBuying?'rgba(14,234,12,.25)':'rgba(251,63,63,.25)';
+    return`<div class="lite-pressure-row" style="cursor:pointer" onclick="selectAsset('${t.s}')">
+      <div class="lite-pressure-sym">${t.s}</div>
+      <div class="lite-pressure-label">${isBuying?'Buying dips (positive GEX)':'Chasing moves (negative GEX)'}</div>
+      <span class="lite-pressure-badge" style="background:${bg};color:${color};border-color:${border}">${label}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderLiteBreakouts(){
+  const el=document.getElementById('lite-breakouts');if(!el)return;
+  const tokens=[...D].filter(t=>t.mc>500e6&&(t.ch24h>5||t.ch24h<-5)).sort((a,b)=>Math.abs(b.ch24h)-Math.abs(a.ch24h)).slice(0,8);
+  if(!tokens.length){el.innerHTML='<div style="padding:14px;color:var(--t4);font-size:11px;text-align:center">No strong breakouts right now</div>';return;}
+  el.innerHTML=tokens.map(t=>{
+    const isUp=t.ch24h>0;
+    const color=isUp?'var(--green)':'var(--red)';
+    return`<div class="lite-breakout-row" onclick="selectAsset('${t.s}')">
+      <div>
+        <div style="font-weight:800;font-size:12px">${t.s}</div>
+        <div style="font-size:9px;color:var(--t4)">${t.n}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="num-mono" style="font-weight:700;font-size:12px;color:${color}">${isUp?'+':''}${t.ch24h}%</div>
+        <div style="font-size:9px;color:var(--t4)">${fPr(t.p)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLiteMktStrip(){
+  const el=document.getElementById('lite-mkt-strip');if(!el)return;
+  const tokens=['BTC','ETH','SOL','BNB'].map(s=>D.find(d=>d.s===s)).filter(Boolean);
+  el.innerHTML=tokens.map(t=>{
+    const chgColor=t.ch24h>=0?'var(--green)':'var(--red)';
+    return`<div class="mkt-c" style="cursor:pointer" onclick="selectAsset('${t.s}')">
+      <div class="l">${t.s}</div>
+      <div class="v num-mono">${fPr(t.p)}</div>
+      <div class="c num-mono" style="color:${chgColor}">${t.ch24h>=0?'+':''}${t.ch24h}%</div>
+      <div class="sub">${fmt(t.mc)} MCap</div>
+    </div>`;
+  }).join('');
+}
+
+function renderLiteMovers(){
+  const gainEl=document.getElementById('lite-gainers');
+  const loseEl=document.getElementById('lite-losers');
+  const tokens=[...D].filter(t=>t.mc>300e6);
+  const gainers=[...tokens].sort((a,b)=>b.ch24h-a.ch24h).slice(0,15);
+  const losers=[...tokens].sort((a,b)=>a.ch24h-b.ch24h).slice(0,15);
+  const row=(t,i,isUp)=>`<div class="gl-row" onclick="selectAsset('${t.s}')">
+    <div class="gl-left"><div class="gl-rank">${i+1}</div><div><div class="gl-sym">${t.s}</div><div class="gl-name">${t.n}</div></div></div>
+    <div class="gl-right"><div class="gl-chg num-mono" style="color:${isUp?'var(--green)':'var(--red)'}">${isUp?'+':''}${t.ch24h}%</div><div class="gl-price num-mono">${fPr(t.p)}</div></div>
+  </div>`;
+  if(gainEl)gainEl.innerHTML=gainers.map((t,i)=>row(t,i,true)).join('');
+  if(loseEl)loseEl.innerHTML=losers.map((t,i)=>row(t,i,false)).join('');
+}
+
+function renderLiteHype(){
+  const el=document.getElementById('lite-hype-list');if(!el)return;
+  const tokens=[...D].filter(t=>t.mc>500e6).map(t=>({...t,...calcHypeScore(t)})).sort((a,b)=>b.hype-a.hype).slice(0,20);
+  el.innerHTML=tokens.map(t=>{
+    const hypeColor=t.hype>70?'var(--red)':t.hype>50?'var(--amber)':'var(--green)';
+    const trendColor=t.trend==='RISING'?'var(--green)':t.trend==='FALLING'?'var(--red)':'var(--t3)';
+    return`<div class="spot-hype-meter" style="cursor:pointer" onclick="selectAsset('${t.s}')">
+      <div class="sym">${t.s}</div>
+      <div class="meter-wrap">
+        <div class="meter"><div class="meter-fill" style="width:${t.hype}%;background:${hypeColor}"></div></div>
+        <div class="score num-mono" style="color:${hypeColor}">${t.hype}</div>
+      </div>
+      <div class="trend" style="color:${trendColor}">${t.trend}</div>
+    </div>`;
+  }).join('');
+}
+
 function renderAll(){
   renderMkt();renderFG();renderRegime();renderTicker();renderKPIRow();
   const tab=document.querySelector('.tab-panel.active')?.id;
-  // Shared panels (available in both modes)
+  // Shared panels (available in all modes)
   if(tab==='panel-sentiment'){renderSentimentWordmap();renderSDMDeltaList();renderSDMCategoryBreakdown();}
   if(tab==='panel-alpha'){renderAlphaScanner();}
   if(tab==='panel-stresstest'){renderStressScenarios();updateStressTest();}
-  if(currentMode==='spot'){
+  if(tab==='panel-intel')renderNews("news-full");
+  if(currentMode==='lite'){
+    if(tab==='panel-lite-dashboard')renderLiteDashboard();
+    if(tab==='panel-lite-movers')renderLiteMovers();
+    if(tab==='panel-lite-hype')renderLiteHype();
+  } else if(currentMode==='spot'){
     if(tab==='panel-dashboard'){renderTreemap();renderGL();renderBubbles();renderNews("news-dash");renderSpotHypeScore();renderSpotBreakoutSignals();}
     if(tab==='panel-funding'){renderFunding("fund-body");renderLiqData();}
     if(tab==='panel-scanner')renderTable();
-    if(tab==='panel-intel')renderNews("news-full");
   } else {
     if(tab==='panel-signals'){renderSignals();renderExpectedMove("em-btc","BTC");renderExpectedMove("em-eth","ETH");renderExpectedMove("em-sol","SOL");renderMaxPain();}
     if(tab==='panel-greeks'){renderVanna();renderCharm();renderVannaCharmSignal();}
@@ -3410,5 +3887,13 @@ function initApp(){
 // ═══ BOOT ═══════════════════════════════════════════════════════
 showApp();
 </script>
+
+<!-- ═══ DEEP-DIVE MODAL ═══ -->
+<div class="modal-overlay hidden" id="deepdive-overlay" onclick="closeDeepDive(event)">
+  <div class="modal-box" id="deepdive-box">
+    <!-- Populated by selectAsset() -->
+  </div>
+</div>
+
 </body>
 </html>
