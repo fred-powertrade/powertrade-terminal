@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>PowerTrade — Institutional Crypto Risk Terminal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -100,7 +101,7 @@ header{background:var(--header-bg);backdrop-filter:blur(24px);-webkit-backdrop-f
 /* MAIN TABS */
 .main-tabs{background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:49px;z-index:190}
 .main-tabs-inner{display:flex;gap:0}
-.mtab{padding:9px 18px;font-size:11px;font-weight:600;color:var(--t4);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;white-space:nowrap;letter-spacing:.01em}
+.mtab{padding:9px 18px;font-size:11px;font-weight:600;color:var(--t4);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;white-space:nowrap;letter-spacing:.01em;position:relative}
 .mtab:hover{color:var(--t2);background:rgba(255,255,255,.008)}
 .mtab.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(0,220,130,.02)}
 .tab-panel{display:none}.tab-panel.active{display:block}
@@ -170,8 +171,16 @@ header{background:var(--header-bg);backdrop-filter:blur(24px);-webkit-backdrop-f
 .sig-m .l{font-size:7.5px;color:var(--t4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:1px}
 .sig-m .v{font-size:10px;font-weight:700;font-family:'Ubuntu Mono',monospace}
 .sig-strategy{font-size:9.5px;font-weight:600;padding:6px 10px;background:rgba(0,220,130,.04);border:1px solid rgba(0,220,130,.1);border-radius:6px;color:var(--amber);margin-top:8px;display:flex;align-items:center;gap:5px}
+.sig-trade-link{font-size:8.5px;font-weight:700;padding:5px 10px;background:rgba(0,220,130,.08);border:1px solid rgba(0,220,130,.18);border-radius:5px;color:var(--cyan);margin-top:6px;display:flex;align-items:center;gap:5px;cursor:pointer;transition:all .15s;text-decoration:none}
+.sig-trade-link:hover{background:rgba(0,220,130,.15);border-color:rgba(0,220,130,.35);transform:translateY(-1px)}
+.sig-trade-link .pt-arrow{font-size:11px;opacity:.6}
+.sig-expiry{font-size:8px;font-weight:700;font-family:'Ubuntu Mono',monospace;padding:2px 6px;border-radius:3px;background:var(--surface3);color:var(--t2);letter-spacing:.04em}
+.sig-explain{font-size:9px;color:var(--t4);line-height:1.5;margin-top:6px;padding:6px 8px;background:var(--bg2);border-radius:5px;border-left:2px solid var(--border2)}
 
-/* Flow Feed */
+/* Tab Tooltips */
+.mtab .tab-tooltip{visibility:hidden;opacity:0;position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a24;border:1px solid var(--border2);border-radius:6px;padding:8px 11px;font-size:9px;font-weight:400;color:var(--t2);line-height:1.5;white-space:normal;width:220px;z-index:999;pointer-events:none;transition:opacity .15s,visibility .15s;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.mtab .tab-tooltip::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:5px solid #1a1a24}
+.mtab:hover .tab-tooltip{visibility:visible;opacity:1}
 .flow-item{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .1s}
 .flow-item:hover{background:rgba(255,255,255,.015)}
 .flow-item:last-child{border-bottom:none}
@@ -298,9 +307,69 @@ header{background:var(--header-bg);backdrop-filter:blur(24px);-webkit-backdrop-f
 .news-item{padding:11px 15px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;transition:background .1s}
 .news-item:hover{background:rgba(255,255,255,.012)}
 .news-item:last-child{border-bottom:none}
+.news-item.news-breaking{border-left:3px solid #FB3F3F;background:rgba(251,63,63,.04)}
+.news-item.news-high{border-left:3px solid #F7931A}
 .news-time{font-size:8.5px;color:var(--t4);font-family:'Ubuntu Mono',monospace;margin-bottom:2px}
+.news-source{font-size:8px;color:var(--t4);margin-left:6px;font-style:italic}
 .news-title{font-size:11.5px;font-weight:600;color:var(--t1);line-height:1.45;margin-bottom:4px}
 .news-tags{display:flex;gap:3px;flex-wrap:wrap}
+.news-impact{display:inline-block;font-size:7.5px;font-weight:700;letter-spacing:.06em;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
+.news-impact.impact-breaking{background:#FB3F3F;color:#fff;animation:pulse-impact 1.5s infinite}
+.news-impact.impact-high{background:#F7931A;color:#000}
+.news-impact.impact-medium{background:#22272D;color:#A1A1AA}
+@keyframes pulse-impact{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* News Filters */
+.news-filters{display:flex;gap:6px;padding:8px 12px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border)}
+.news-filter-btn{font-size:9px;padding:3px 8px;border-radius:4px;background:var(--surface2);color:var(--t3);border:1px solid var(--border);cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;font-weight:500}
+.news-filter-btn:hover{background:var(--surface3);color:var(--t2)}
+.news-filter-btn.active{background:rgba(14,234,12,.1);color:#0EEA0C;border-color:rgba(14,234,12,.3)}
+.news-search{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:9px;color:var(--t1);font-family:'Inter',sans-serif;width:140px;outline:none}
+.news-search:focus{border-color:#0EEA0C}
+.news-search::placeholder{color:var(--t4)}
+
+/* Breaking News Alert Bar */
+.breaking-bar{display:none;padding:7px 14px;background:linear-gradient(90deg,rgba(251,63,63,.08),rgba(251,63,63,.02));border-bottom:1px solid rgba(251,63,63,.2);align-items:center;gap:8px;animation:flash-bar 3s ease-in-out}
+.breaking-bar.visible{display:flex}
+.breaking-label{font-size:8px;font-weight:800;letter-spacing:.1em;color:#FB3F3F;text-transform:uppercase;white-space:nowrap;animation:pulse-impact 1.5s infinite}
+.breaking-text{font-size:10.5px;color:#FAFAFA;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.breaking-dismiss{font-size:10px;color:#404050;cursor:pointer;padding:2px 6px}
+.breaking-dismiss:hover{color:#A1A1AA}
+@keyframes flash-bar{0%{background:rgba(251,63,63,.15)}100%{background:linear-gradient(90deg,rgba(251,63,63,.08),rgba(251,63,63,.02))}}
+
+/* Trend Tags */
+.trend-bar{display:flex;gap:5px;padding:8px 12px;flex-wrap:wrap;border-bottom:1px solid var(--border);align-items:center}
+.trend-label{font-size:8px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.08em;margin-right:4px}
+.trend-tag{font-size:8.5px;padding:2px 7px;border-radius:10px;background:rgba(168,85,247,.1);color:var(--violet);border:1px solid rgba(168,85,247,.2);cursor:pointer;transition:all .15s;font-weight:500}
+.trend-tag:hover{background:rgba(168,85,247,.2)}
+.trend-tag .trend-count{font-size:7px;color:rgba(168,85,247,.6);margin-left:3px}
+
+/* Alert Subscriptions */
+.alert-sub-bar{display:flex;gap:5px;padding:6px 12px;flex-wrap:wrap;border-bottom:1px solid var(--border);align-items:center}
+.alert-sub-label{font-size:8px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.08em;margin-right:4px}
+.alert-chip{font-size:8px;padding:2px 7px;border-radius:10px;background:rgba(14,234,12,.08);color:#0EEA0C;border:1px solid rgba(14,234,12,.2);cursor:pointer;display:flex;align-items:center;gap:3px}
+.alert-chip .alert-remove{font-size:9px;opacity:.5;margin-left:2px}
+.alert-chip .alert-remove:hover{opacity:1}
+.alert-add-btn{font-size:9px;padding:2px 7px;border-radius:10px;background:var(--surface2);color:var(--t3);border:1px dashed var(--border);cursor:pointer}
+.alert-add-btn:hover{color:var(--t2);border-color:var(--t3)}
+
+/* Supabase config modal */
+.sb-config-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center}
+.sb-config-overlay.visible{display:flex}
+.sb-config-modal{background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:24px;width:420px;max-width:90vw}
+.sb-config-modal h3{font-size:14px;color:var(--t1);margin-bottom:4px}
+.sb-config-modal p{font-size:10px;color:var(--t3);margin-bottom:16px;line-height:1.5}
+.sb-config-modal label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px}
+.sb-config-modal input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:8px 10px;font-size:11px;color:var(--t1);font-family:'Ubuntu Mono',monospace;margin-bottom:12px;outline:none}
+.sb-config-modal input:focus{border-color:var(--cyan)}
+.sb-config-modal .sb-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.sb-config-modal button{padding:6px 16px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;border:none}
+.sb-btn-save{background:var(--cyan);color:#000}
+.sb-btn-cancel{background:var(--surface3);color:var(--t2)}
+.sb-btn-init{background:var(--amber);color:#000;margin-right:auto;font-size:9px;padding:5px 10px}
+.sb-status{font-size:9px;margin-top:8px;padding:6px 10px;border-radius:4px;display:none}
+.sb-status.sb-ok{display:block;background:rgba(0,220,130,.08);color:var(--green)}
+.sb-status.sb-err{display:block;background:rgba(255,56,96,.08);color:var(--red)}
 
 /* Put/Call */
 .pcr-row{display:flex;align-items:center;gap:8px;padding:7px 13px;border-bottom:1px solid rgba(255,255,255,.05)}
@@ -1032,7 +1101,7 @@ const LiveData = {
     deribit:    { id:'deribit',    name:'Deribit',         url:'deribit.com',        type:'REST',  interval:30,  connected:false, lastSuccess:0, lastAttempt:0, lastError:null, fetchCount:0, errorCount:0, provides:'Options IV, Term Structure, Skew, OI, Funding, Flow' },
     binanceWs:  { id:'binanceWs',  name:'Binance WS',     url:'stream.binance.com', type:'WS',    interval:0,   connected:false, lastSuccess:0, lastAttempt:0, lastError:null, fetchCount:0, errorCount:0, provides:'Real-time prices (sub-second), 24h Volume' },
     fng:        { id:'fng',        name:'Alternative.me',  url:'api.alternative.me',  type:'REST',  interval:300, connected:false, lastSuccess:0, lastAttempt:0, lastError:null, fetchCount:0, errorCount:0, provides:'Fear & Greed Index' },
-    news:       { id:'news',       name:'CryptoCompare',   url:'min-api.cryptocompare.com', type:'REST', interval:180, connected:false, lastSuccess:0, lastAttempt:0, lastError:null, fetchCount:0, errorCount:0, provides:'Live crypto news articles' },
+    news:       { id:'news',       name:'Supabase News',   url:'supabase.co', type:'REALTIME', interval:60, connected:false, lastSuccess:0, lastAttempt:0, lastError:null, fetchCount:0, errorCount:0, provides:'Curated crypto news via Supabase (fallback: CryptoCompare)' },
   },
   fieldTs: {},
   errors: [],
@@ -1214,6 +1283,11 @@ const LiveData = {
   },
 
   async fetchNews() {
+    // Delegate to Supabase if configured
+    if (SupabaseNews.connected) {
+      return SupabaseNews.fetchNews();
+    }
+    // Fallback: CryptoCompare
     const s=this.src.news; s.lastAttempt=Date.now(); s.fetchCount++;
     try {
       const r=await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN&sortOrder=latest');
@@ -1236,7 +1310,7 @@ const LiveData = {
         if(!tags.length)tags.push('MACRO');
         const ageMs=Date.now()/1000-n.published_on;
         const ageStr=ageMs<3600?`${Math.floor(ageMs/60)}m`:ageMs<86400?`${Math.floor(ageMs/3600)}h`:`${Math.floor(ageMs/86400)}d`;
-        return{t:n.title,tags:tags.slice(0,3),time:ageStr,url:n.url,source:n.source};
+        return{t:n.title,tags:tags.slice(0,3),time:ageStr,url:n.url,source:n.source,impact:'medium'};
       });
       if(articles.length>0){
         NEWS.length=0; NEWS.push(...articles);
@@ -1482,16 +1556,295 @@ function detectComplexSpreads(){
 generateFlows();
 
 const NEWS=[
-  {t:"BlackRock doubles BTC ETF holdings amid volatility compression",tags:["BTC","BULL","ETF"],time:"3m"},
-  {t:"ETH IV Rank drops to 18% — options market pricing calm ahead of upgrade",tags:["ETH","VOL","CHEAP"],time:"11m"},
-  {t:"SOL 25-delta skew turns positive for first time in 6 weeks",tags:["SOL","SKEW","CALL"],time:"22m"},
-  {t:"BTC perpetual funding hits 0.07% on OKX — extreme leverage warning",tags:["BTC","FUNDING","RISK"],time:"35m"},
-  {t:"Gamma squeeze watch: BTC approaching -$800M GEX level",tags:["BTC","GEX","RISK"],time:"48m"},
-  {t:"Deribit reports record $2.8B notional in BTC calls for March 28 expiry",tags:["BTC","DERIBIT","FLOW"],time:"1h"},
-  {t:"Fed minutes signal no rate cuts until Q3 — crypto vol term structure steepens",tags:["MACRO","VOL","TERM"],time:"1.5h"},
-  {t:"ETH/BTC ratio breaks key level, ETH vol skew turning negative",tags:["ETH","SKEW","BEAR"],time:"2h"},
+  {t:"BlackRock doubles BTC ETF holdings amid volatility compression",tags:["BTC","BULL","ETF"],time:"3m",impact:"high",source:"Bloomberg",url:"#"},
+  {t:"ETH IV Rank drops to 18% — options market pricing calm ahead of upgrade",tags:["ETH","VOL","CHEAP"],time:"11m",impact:"medium",source:"Deribit",url:"#"},
+  {t:"SOL 25-delta skew turns positive for first time in 6 weeks",tags:["SOL","SKEW","CALL"],time:"22m",impact:"medium",source:"Laevitas",url:"#"},
+  {t:"BTC perpetual funding hits 0.07% on OKX — extreme leverage warning",tags:["BTC","FUNDING","RISK"],time:"35m",impact:"high",source:"Coinglass",url:"#"},
+  {t:"Gamma squeeze watch: BTC approaching -$800M GEX level",tags:["BTC","GEX","RISK"],time:"48m",impact:"breaking",source:"PowerTrade",url:"#"},
+  {t:"Deribit reports record $2.8B notional in BTC calls for March 28 expiry",tags:["BTC","DERIBIT","FLOW"],time:"1h",impact:"medium",source:"Deribit",url:"#"},
+  {t:"Fed minutes signal no rate cuts until Q3 — crypto vol term structure steepens",tags:["MACRO","VOL","TERM"],time:"1.5h",impact:"high",source:"Reuters",url:"#"},
+  {t:"ETH/BTC ratio breaks key level, ETH vol skew turning negative",tags:["ETH","SKEW","BEAR"],time:"2h",impact:"medium",source:"TradingView",url:"#"},
 ];
 const tagCls={BTC:"tag-hot",ETH:"tag-info",SOL:"tag-vol",BULL:"tag-bull",BEAR:"tag-bear",RISK:"tag-bear",VOL:"tag-vol",FLOW:"tag-teal",MACRO:"tag-sym",CHEAP:"tag-bull",SKEW:"tag-vol",OI:"tag-info",DEFI:"tag-info",FUNDING:"tag-bear",GEX:"tag-vol",TERM:"tag-sym",CALL:"tag-bull",DERIBIT:"tag-sym",ETF:"tag-bull"};
+
+// ═══ SUPABASE NEWS SERVICE ══════════════════════════════════════
+const SupabaseNews = {
+  client: null,
+  subscription: null,
+  connected: false,
+  activeFilter: 'all',
+  searchQuery: '',
+  alertKeywords: JSON.parse(localStorage.getItem('pt-news-alerts')||'["liquidation","hack","SEC","ETF approval","black swan"]'),
+  lastBreakingId: null,
+
+  getConfig() {
+    return {
+      url: localStorage.getItem('pt-sb-url') || '',
+      key: localStorage.getItem('pt-sb-key') || ''
+    };
+  },
+
+  saveConfig(url, key) {
+    localStorage.setItem('pt-sb-url', url);
+    localStorage.setItem('pt-sb-key', key);
+  },
+
+  isConfigured() {
+    const c = this.getConfig();
+    return c.url && c.key;
+  },
+
+  init() {
+    if (!this.isConfigured()) {
+      console.log('[SupabaseNews] Not configured — using fallback data');
+      return false;
+    }
+    try {
+      const c = this.getConfig();
+      this.client = supabase.createClient(c.url, c.key);
+      this.connected = true;
+      console.log('[SupabaseNews] Client initialized');
+      return true;
+    } catch (e) {
+      console.warn('[SupabaseNews] Init failed:', e.message);
+      return false;
+    }
+  },
+
+  async fetchNews(opts = {}) {
+    if (!this.client) return false;
+    const s = LiveData.src.news;
+    s.lastAttempt = Date.now(); s.fetchCount++;
+    try {
+      let query = this.client.from('news').select('*').order('published_at', { ascending: false }).limit(opts.limit || 30);
+      if (opts.tag && opts.tag !== 'all') query = query.contains('tags', [opts.tag]);
+      if (opts.impact) query = query.eq('impact', opts.impact);
+      if (opts.search) query = query.ilike('title', `%${opts.search}%`);
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      if (data && data.length > 0) {
+        const articles = data.map(n => {
+          const ageMs = Date.now() - new Date(n.published_at).getTime();
+          const ageStr = ageMs < 3600000 ? `${Math.floor(ageMs/60000)}m` : ageMs < 86400000 ? `${Math.floor(ageMs/3600000)}h` : `${Math.floor(ageMs/86400000)}d`;
+          return { id: n.id, t: n.title, tags: n.tags || ['MACRO'], time: ageStr, url: n.url || '#', source: n.source || '', impact: n.impact || 'medium', published_at: n.published_at };
+        });
+        NEWS.length = 0; NEWS.push(...articles);
+        this.checkAlerts(articles);
+        this.computeTrends(articles);
+        renderNews("news-dash"); renderNews("news-full");
+      }
+      s.connected = true; s.lastSuccess = Date.now(); s.lastError = null;
+      return true;
+    } catch (e) {
+      s.connected = false; LiveData.logError('news', e.message);
+      console.warn('[SupabaseNews] Fetch error:', e.message);
+      return false;
+    }
+  },
+
+  subscribe() {
+    if (!this.client) return;
+    try {
+      this.subscription = this.client.channel('news-realtime')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'news' }, payload => {
+          const n = payload.new;
+          const ageMs = Date.now() - new Date(n.published_at).getTime();
+          const ageStr = ageMs < 60000 ? 'now' : `${Math.floor(ageMs/60000)}m`;
+          const article = { id: n.id, t: n.title, tags: n.tags || ['MACRO'], time: ageStr, url: n.url || '#', source: n.source || '', impact: n.impact || 'medium', published_at: n.published_at };
+          NEWS.unshift(article);
+          if (NEWS.length > 50) NEWS.length = 50;
+          if (n.impact === 'breaking') this.showBreaking(article);
+          this.checkAlerts([article]);
+          this.computeTrends(NEWS);
+          renderNews("news-dash"); renderNews("news-full");
+          console.log('[SupabaseNews] Realtime insert:', n.title);
+        })
+        .subscribe(status => {
+          console.log('[SupabaseNews] Realtime status:', status);
+        });
+    } catch (e) {
+      console.warn('[SupabaseNews] Subscribe error:', e.message);
+    }
+  },
+
+  showBreaking(article) {
+    if (this.lastBreakingId === article.id) return;
+    this.lastBreakingId = article.id;
+    document.querySelectorAll('.breaking-bar').forEach(bar => {
+      bar.querySelector('.breaking-text').textContent = article.t;
+      bar.classList.add('visible');
+    });
+  },
+
+  dismissBreaking() {
+    document.querySelectorAll('.breaking-bar').forEach(bar => bar.classList.remove('visible'));
+  },
+
+  checkAlerts(articles) {
+    for (const a of articles) {
+      for (const kw of this.alertKeywords) {
+        if (a.t.toLowerCase().includes(kw.toLowerCase())) {
+          this.showBreaking(a);
+          return;
+        }
+      }
+    }
+  },
+
+  computeTrends(articles) {
+    const freq = {};
+    const recent = articles.filter(a => {
+      const age = Date.now() - new Date(a.published_at || Date.now()).getTime();
+      return age < 86400000;
+    });
+    for (const a of recent) {
+      for (const tag of (a.tags || [])) {
+        freq[tag] = (freq[tag] || 0) + 1;
+      }
+      const words = a.t.toLowerCase().split(/\s+/);
+      for (const w of words) {
+        if (w.length > 4 && !['about','their','would','could','after','other','which','there','these','those','where','while'].includes(w)) {
+          freq[w] = (freq[w] || 0) + 1;
+        }
+      }
+    }
+    const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    document.querySelectorAll('.trend-bar-items').forEach(el => {
+      el.innerHTML = sorted.map(([word, count]) =>
+        `<span class="trend-tag" onclick="SupabaseNews.filterBySearch('${word}')">${word}<span class="trend-count">${count}</span></span>`
+      ).join('');
+    });
+  },
+
+  filterByTag(tag, btn) {
+    this.activeFilter = tag;
+    document.querySelectorAll('.news-filter-btn[data-type="tag"]').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    this.applyFilters();
+  },
+
+  filterBySearch(q) {
+    this.searchQuery = q;
+    document.querySelectorAll('.news-search').forEach(el => { el.value = q; });
+    this.applyFilters();
+  },
+
+  applyFilters() {
+    const tag = this.activeFilter;
+    const q = this.searchQuery.toLowerCase();
+    const filtered = NEWS.filter(n => {
+      if (tag !== 'all' && !(n.tags || []).includes(tag)) return false;
+      if (q && !n.t.toLowerCase().includes(q) && !(n.tags||[]).some(t => t.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    renderNewsFiltered("news-dash", filtered.slice(0, 8));
+    renderNewsFiltered("news-full", filtered);
+  },
+
+  addAlertKeyword(kw) {
+    if (!kw || this.alertKeywords.includes(kw)) return;
+    this.alertKeywords.push(kw);
+    localStorage.setItem('pt-news-alerts', JSON.stringify(this.alertKeywords));
+    this.renderAlertChips();
+  },
+
+  removeAlertKeyword(kw) {
+    this.alertKeywords = this.alertKeywords.filter(k => k !== kw);
+    localStorage.setItem('pt-news-alerts', JSON.stringify(this.alertKeywords));
+    this.renderAlertChips();
+  },
+
+  renderAlertChips() {
+    document.querySelectorAll('.alert-chips').forEach(el => {
+      el.innerHTML = this.alertKeywords.map(kw =>
+        `<span class="alert-chip">${kw}<span class="alert-remove" onclick="event.stopPropagation();SupabaseNews.removeAlertKeyword('${kw}')">&times;</span></span>`
+      ).join('') + `<span class="alert-add-btn" onclick="promptAlertKeyword()">+ Add</span>`;
+    });
+  },
+
+  async testConnection() {
+    if (!this.client) return { ok: false, msg: 'Client not initialized' };
+    try {
+      const { data, error } = await this.client.from('news').select('id').limit(1);
+      if (error) return { ok: false, msg: error.message };
+      return { ok: true, msg: 'Connected. Table accessible.' };
+    } catch (e) {
+      return { ok: false, msg: e.message };
+    }
+  },
+
+  getCreateTableSQL() {
+    return `-- PowerTrade News Table Schema
+CREATE TABLE IF NOT EXISTS news (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  tags TEXT[] DEFAULT '{}',
+  impact TEXT DEFAULT 'medium' CHECK (impact IN ('breaking', 'high', 'medium', 'low')),
+  source TEXT DEFAULT '',
+  url TEXT DEFAULT '',
+  published_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER PUBLICATION supabase_realtime ADD TABLE news;
+CREATE INDEX idx_news_published_at ON news(published_at DESC);
+CREATE INDEX idx_news_tags ON news USING GIN(tags);
+CREATE INDEX idx_news_impact ON news(impact);
+ALTER TABLE news ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read" ON news FOR SELECT USING (true);
+CREATE POLICY "Allow authenticated insert" ON news FOR INSERT WITH CHECK (true);`;
+  }
+};
+
+function promptAlertKeyword() {
+  const kw = prompt('Enter keyword to alert on:');
+  if (kw) SupabaseNews.addAlertKeyword(kw.trim());
+}
+
+function showSupabaseConfig() {
+  const c = SupabaseNews.getConfig();
+  document.getElementById('sb-url-input').value = c.url;
+  document.getElementById('sb-key-input').value = c.key;
+  document.getElementById('sb-status-msg').className = 'sb-status';
+  document.getElementById('sb-status-msg').textContent = '';
+  document.querySelector('.sb-config-overlay').classList.add('visible');
+}
+
+function hideSupabaseConfig() {
+  document.querySelector('.sb-config-overlay').classList.remove('visible');
+}
+
+async function saveSupabaseConfig() {
+  const url = document.getElementById('sb-url-input').value.trim();
+  const key = document.getElementById('sb-key-input').value.trim();
+  if (!url || !key) {
+    const el = document.getElementById('sb-status-msg');
+    el.className = 'sb-status sb-err'; el.textContent = 'Both URL and Key are required';
+    return;
+  }
+  SupabaseNews.saveConfig(url, key);
+  if (SupabaseNews.init()) {
+    const result = await SupabaseNews.testConnection();
+    const el = document.getElementById('sb-status-msg');
+    if (result.ok) {
+      el.className = 'sb-status sb-ok'; el.textContent = result.msg;
+      setTimeout(() => {
+        hideSupabaseConfig();
+        SupabaseNews.fetchNews();
+        SupabaseNews.subscribe();
+      }, 1000);
+    } else {
+      el.className = 'sb-status sb-err'; el.textContent = result.msg;
+    }
+  }
+}
+
+function copySchemaSQL() {
+  const sql = SupabaseNews.getCreateTableSQL();
+  navigator.clipboard.writeText(sql).then(() => {
+    const el = document.getElementById('sb-status-msg');
+    el.className = 'sb-status sb-ok'; el.textContent = 'SQL copied to clipboard! Run it in Supabase SQL Editor.';
+  });
+}
 
 // ═══ REGIME + SIGNAL + CALCULATORS ═════════════════════════════
 function detectRegime(){
@@ -1579,22 +1932,48 @@ function calcGammaProfile(sym){
   return{strikes,flipPrice,wallPrice,flipDelta,regime,price,gexBase,maxGEX};
 }
 
+const SIGNAL_EXPIRIES=["28MAR25","25APR25","30MAY25","27JUN25","26SEP25","26DEC25"];
+function pickSignalExpiry(type){
+  if(type==="vol"||type==="squeeze")return SIGNAL_EXPIRIES[0];
+  if(type==="sell")return SIGNAL_EXPIRIES[1];
+  return SIGNAL_EXPIRIES[2];
+}
+function ptOrderbookUrl(sym, expiry, strike, optType){
+  return `https://app.power.trade/trade/${sym}-${expiry}-${strike}-${optType}`;
+}
+function ptTradeUrl(sym){
+  return `https://app.power.trade/trade/${sym}`;
+}
+
+const SIGNAL_EXPLANATIONS = {
+  "Long Vol Opportunity": "IV Rank measures current implied volatility relative to its 1-year range. Below 18% means options are historically cheap — buying straddles profits if actual volatility exceeds what the market is pricing. The lower the IVR, the more asymmetric the long vol bet becomes.",
+  "Sell Vol — IV Rich": "When IV Rank is above 80%, options are expensive relative to history. Selling premium via iron condors or strangles captures the difference between elevated implied vol and likely lower realized vol. Best when IV-RV spread is positive (IV overpricing actual moves).",
+  "Put Skew Extreme": "25-delta put skew measures the premium of out-of-the-money puts vs. calls. Extreme negative skew means the market is aggressively bidding downside protection. Risk reversals (sell put, buy call) profit from skew mean-reversion.",
+  "Call Skew Elevated": "Positive call skew means OTM calls are trading at a premium to puts. This typically indicates crowded upside speculation. Selling overpriced calls or call spreads profits when call premium mean-reverts.",
+  "Crowded Long": "Perpetual funding rate above 0.04% (annualized ~87%) signals extreme long leverage. Historically, crowded longs precede liquidation cascades. Put spreads protect against the inevitable funding-driven deleveraging.",
+  "Crowded Short": "Negative funding below -0.04% indicates heavy short positioning. Short squeezes become likely as market makers force-cover. Call spreads or outright longs benefit from the short covering rally.",
+  "Neg GEX — Amplification": "Negative Gamma Exposure (GEX) means market makers are short gamma — they must sell into declines and buy into rallies, amplifying moves in both directions. Long straddles profit from the increased realized volatility this creates."
+};
+
 function generateSignals(){
   const regime=detectRegime();
   const candidates=[...D].filter(t=>t.mc>500e6).sort((a,b)=>b.conviction-a.conviction);
   const signals=[];
   for(const t of candidates){
     if(signals.length>=9)break;
-    let type="neutral",title="",desc="",strategy="",metrics=[];
+    let type="neutral",title="",desc="",strategy="",metrics=[],optType="C",strikeMult=1;
     const ivRvSpread=t.iv-t.rv30;
-    if(t.ivRank<18){type="vol";title="Long Vol Opportunity";desc=`IV Rank at ${t.ivRank}th pctile — vol cheap.`;strategy=`Buy ATM Straddle · ${t.s}`;metrics=[{l:"IVR",v:`${t.ivRank}%`,c:"var(--green)"},{l:"IV",v:`${t.iv}%`,c:"var(--t2)"}];}
-    else if(t.ivRank>80){type="sell";title="Sell Vol — IV Rich";desc=`IV Rank ${t.ivRank}% — elevated.`;strategy=`Iron Condor · ${t.s}`;metrics=[{l:"IVR",v:`${t.ivRank}%`,c:"var(--red)"},{l:"IV-RV",v:`+${ivRvSpread.toFixed(1)}%`,c:"var(--red)"}];}
-    else if(t.skew25d<-4){type="squeeze";title="Put Skew Extreme";desc=`25Δ skew at ${t.skew25d}.`;strategy=`Risk Reversal · ${t.s}`;metrics=[{l:"Skew",v:`${t.skew25d}`,c:"var(--red)"}];}
-    else if(t.skew25d>4){type="squeeze";title="Call Skew Elevated";desc=`Call premium stretched +${t.skew25d}.`;strategy=`Sell OTM Calls · ${t.s}`;metrics=[{l:"Skew",v:`+${t.skew25d}`,c:"var(--amber)"}];}
-    else if(Math.abs(t.fund)>0.04){type="squeeze";title=t.fund>0?"Crowded Long":"Crowded Short";desc=`Funding ${(t.fund*100).toFixed(3)}%.`;strategy=t.fund>0?"Put Spreads":"Call Spreads";metrics=[{l:"Fund",v:`${(t.fund*100).toFixed(3)}%`,c:t.fund>0?"var(--red)":"var(--green)"}];}
-    else if(t.gammaExp<-t.mc*0.02){type="vol";title="Neg GEX — Amplification";desc=`GEX deeply negative.`;strategy=`Long Straddle · ${t.s}`;metrics=[{l:"GEX",v:fmt(t.gammaExp),c:"var(--red)"}];}
+    if(t.ivRank<18){type="vol";title="Long Vol Opportunity";desc=`IV Rank at ${t.ivRank}th pctile — vol is historically cheap. Options are underpricing future moves.`;strategy=`Buy ATM Straddle · ${t.s}`;optType="C";strikeMult=1;metrics=[{l:"IVR",v:`${t.ivRank}%`,c:"var(--green)"},{l:"IV",v:`${t.iv}%`,c:"var(--t2)"},{l:"RV30",v:`${t.rv30}%`,c:"var(--t2)"}];}
+    else if(t.ivRank>80){type="sell";title="Sell Vol — IV Rich";desc=`IV Rank ${t.ivRank}% — vol elevated vs. history. IV-RV spread of +${ivRvSpread.toFixed(1)}% suggests options overpricing moves.`;strategy=`Iron Condor · ${t.s}`;optType="C";strikeMult=1.05;metrics=[{l:"IVR",v:`${t.ivRank}%`,c:"var(--red)"},{l:"IV-RV",v:`+${ivRvSpread.toFixed(1)}%`,c:"var(--red)"},{l:"IV",v:`${t.iv}%`,c:"var(--t2)"}];}
+    else if(t.skew25d<-4){type="squeeze";title="Put Skew Extreme";desc=`25Δ skew at ${t.skew25d} — puts trading at a significant premium to calls. Downside fear is elevated.`;strategy=`Risk Reversal · ${t.s}`;optType="P";strikeMult=0.95;metrics=[{l:"Skew",v:`${t.skew25d}`,c:"var(--red)"},{l:"IVR",v:`${t.ivRank}%`,c:"var(--t2)"}];}
+    else if(t.skew25d>4){type="squeeze";title="Call Skew Elevated";desc=`Call premium stretched +${t.skew25d} — OTM calls are overpriced relative to puts. Upside speculation is crowded.`;strategy=`Sell OTM Calls · ${t.s}`;optType="C";strikeMult=1.1;metrics=[{l:"Skew",v:`+${t.skew25d}`,c:"var(--amber)"},{l:"IVR",v:`${t.ivRank}%`,c:"var(--t2)"}];}
+    else if(Math.abs(t.fund)>0.04){type="squeeze";title=t.fund>0?"Crowded Long":"Crowded Short";desc=`Funding ${(t.fund*100).toFixed(3)}% — ${t.fund>0?"longs paying extreme rates to maintain positions. Liquidation cascade risk elevated.":"shorts paying heavily — short squeeze probability rising."}`;strategy=t.fund>0?"Put Spreads":"Call Spreads";optType=t.fund>0?"P":"C";strikeMult=t.fund>0?0.95:1.05;metrics=[{l:"Fund",v:`${(t.fund*100).toFixed(3)}%`,c:t.fund>0?"var(--red)":"var(--green)"},{l:"OI",v:fmt(t.oi),c:"var(--t2)"}];}
+    else if(t.gammaExp<-t.mc*0.02){type="vol";title="Neg GEX — Amplification";desc=`GEX deeply negative at ${fmt(t.gammaExp)}. Dealer hedging will amplify moves in both directions.`;strategy=`Long Straddle · ${t.s}`;optType="C";strikeMult=1;metrics=[{l:"GEX",v:fmt(t.gammaExp),c:"var(--red)"},{l:"IVR",v:`${t.ivRank}%`,c:"var(--t2)"}];}
     else continue;
-    signals.push({...t,sigType:type,title,desc,strategy,metrics});
+    const expiry=pickSignalExpiry(type);
+    const strike=Math.round(t.p*strikeMult/((t.p>1000)?100:(t.p>100)?10:(t.p>10)?1:0.1))*((t.p>1000)?100:(t.p>100)?10:(t.p>10)?1:0.1);
+    const explain=SIGNAL_EXPLANATIONS[title]||'';
+    signals.push({...t,sigType:type,title,desc,strategy,metrics,expiry,strike,optType,explain,tradeUrl:ptTradeUrl(t.s),orderbookUrl:ptOrderbookUrl(t.s,expiry,strike,optType)});
   }
   return signals;
 }
@@ -1855,26 +2234,26 @@ function buildTabs(){
   const el=document.getElementById('main-tabs-inner');if(!el)return;
   if(currentMode==='spot'){
     el.innerHTML=`
-      <div class="mtab active" onclick="switchTab('dashboard')">Dashboard</div>
-      <div class="mtab" onclick="switchTab('sentiment')">Sentiment Map</div>
-      <div class="mtab" onclick="switchTab('alpha')">Alpha Scanner</div>
-      <div class="mtab" onclick="switchTab('funding')">Funding & Liqs</div>
-      <div class="mtab" onclick="switchTab('scanner')">Scanner</div>
-      <div class="mtab" onclick="switchTab('stresstest')">Stress Test</div>
-      <div class="mtab" onclick="switchTab('intel')">Intel</div>
-      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research</div>`;
+      <div class="mtab active" onclick="switchTab('dashboard')">Dashboard<span class="tab-tooltip">Overview of all markets — price treemap, bubble map, live news, hype scores, and breakout signals in one view.</span></div>
+      <div class="mtab" onclick="switchTab('sentiment')">Sentiment Map<span class="tab-tooltip">Predictive sentiment analysis combining X/Twitter velocity and Google Trends data. Identifies when smart money is leading retail sentiment.</span></div>
+      <div class="mtab" onclick="switchTab('alpha')">Alpha Scanner<span class="tab-tooltip">Scans for high-conviction trading opportunities across 60+ tokens using IV rank, funding rate, skew, and GEX dislocations.</span></div>
+      <div class="mtab" onclick="switchTab('funding')">Funding & Liqs<span class="tab-tooltip">Real-time perpetual funding rates, open interest breakdown, long/short ratios, and liquidation heatmaps across major exchanges.</span></div>
+      <div class="mtab" onclick="switchTab('scanner')">Scanner<span class="tab-tooltip">Full token screening table with sortable columns — filter by price change, volume, market cap, funding, and conviction score.</span></div>
+      <div class="mtab" onclick="switchTab('stresstest')">Stress Test<span class="tab-tooltip">Simulate portfolio impact under historical crash scenarios (COVID, FTX, Luna). Shows delta-adjusted PnL with IV spike modeling.</span></div>
+      <div class="mtab" onclick="switchTab('intel')">Intel<span class="tab-tooltip">Live news feed from Supabase with tag-based filters, trend detection, breaking alerts, and custom keyword notifications.</span></div>
+      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research<span class="tab-tooltip">Equity research-style analysis for crypto — detailed thesis, key levels, risk/reward profiles, and options strategy recommendations.</span></div>`;
   } else {
     el.innerHTML=`
-      <div class="mtab active" onclick="switchTab('signals')">Signal Feed</div>
-      <div class="mtab" onclick="switchTab('sentiment')">Sentiment Map</div>
-      <div class="mtab" onclick="switchTab('alpha')">Alpha Scanner</div>
-      <div class="mtab" onclick="switchTab('greeks')">Vanna & Charm</div>
-      <div class="mtab" onclick="switchTab('simulator')">Dealer Simulator</div>
-      <div class="mtab" onclick="switchTab('stresstest')">Stress Test</div>
-      <div class="mtab" onclick="switchTab('optionslab')">Options Lab</div>
-      <div class="mtab" onclick="switchTab('positioning')">Positioning</div>
-      <div class="mtab" onclick="switchTab('fairvalue')">Fair Value</div>
-      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research</div>`;
+      <div class="mtab active" onclick="switchTab('signals')">Signal Feed<span class="tab-tooltip">Top conviction options trade ideas with expiration dates, strike prices, and direct links to trade on PowerTrade's orderbook.</span></div>
+      <div class="mtab" onclick="switchTab('sentiment')">Sentiment Map<span class="tab-tooltip">Predictive sentiment analysis combining X/Twitter velocity and Google Trends data. Identifies when smart money leads retail.</span></div>
+      <div class="mtab" onclick="switchTab('alpha')">Alpha Scanner<span class="tab-tooltip">Scans for high-conviction opportunities using IV rank, funding, skew, and GEX data. Ranked by composite conviction score.</span></div>
+      <div class="mtab" onclick="switchTab('greeks')">Vanna & Charm<span class="tab-tooltip">Second-order Greeks analysis — Vanna (delta sensitivity to IV changes) and Charm (delta decay over time). Shows how dealer hedging shifts with market moves.</span></div>
+      <div class="mtab" onclick="switchTab('simulator')">Dealer Simulator<span class="tab-tooltip">Models market maker positioning and hedging flows. Simulates how dealer gamma exposure changes with spot price, revealing likely support/resistance zones.</span></div>
+      <div class="mtab" onclick="switchTab('stresstest')">Stress Test<span class="tab-tooltip">Simulate portfolio impact under historical crash scenarios with IV expansion. Delta-adjusted PnL with vega offset modeling.</span></div>
+      <div class="mtab" onclick="switchTab('optionslab')">Options Lab<span class="tab-tooltip">IV heatmaps, IV vs. realized vol analysis, live options flow feed, and skew monitor across all assets and expirations.</span></div>
+      <div class="mtab" onclick="switchTab('positioning')">Positioning<span class="tab-tooltip">Gamma Exposure (GEX) analysis — identifies key strike levels where dealer hedging creates magnetic price zones or amplification regions.</span></div>
+      <div class="mtab" onclick="switchTab('fairvalue')">Fair Value<span class="tab-tooltip">Options-implied fair value models using IV, realized vol, and probability cones. Shows expected price distributions for each asset.</span></div>
+      <div class="mtab" onclick="switchTab('xstocks')">xStocks Research<span class="tab-tooltip">Equity research-style analysis for crypto — detailed thesis, key levels, risk/reward profiles, and options strategy recommendations.</span></div>`;
   }
 }
 
@@ -1939,7 +2318,24 @@ function buildSpotPanels(){
         <div class="card-bnp"><div class="bubble-wrap"><canvas id="bub-canvas"></canvas></div></div>
       </div>
       <div class="card">
-        <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--pink)"></span>News</div><span class="badge b-cyan">LIVE</span></div>
+        <div class="card-h"><div class="card-t"><span class="dot" style="background:var(--pink)"></span>News</div>
+          <div style="display:flex;gap:5px;align-items:center">
+            <span class="badge b-cyan">${SupabaseNews.isConfigured()?'SUPABASE':'LIVE'}</span>
+            <span style="font-size:8px;color:var(--t4);cursor:pointer" onclick="showSupabaseConfig()" title="Configure Supabase">&#9881;</span>
+          </div>
+        </div>
+        <div class="breaking-bar" id="breaking-dash">
+          <span class="breaking-label">BREAKING</span>
+          <span class="breaking-text"></span>
+          <span class="breaking-dismiss" onclick="SupabaseNews.dismissBreaking()">&times;</span>
+        </div>
+        <div class="news-filters">
+          <span class="news-filter-btn active" data-type="tag" onclick="SupabaseNews.filterByTag('all',this)">All</span>
+          <span class="news-filter-btn" data-type="tag" onclick="SupabaseNews.filterByTag('BTC',this)">BTC</span>
+          <span class="news-filter-btn" data-type="tag" onclick="SupabaseNews.filterByTag('ETH',this)">ETH</span>
+          <span class="news-filter-btn" data-type="tag" onclick="SupabaseNews.filterByTag('SOL',this)">SOL</span>
+          <span class="news-filter-btn" data-type="tag" onclick="SupabaseNews.filterByTag('MACRO',this)">MACRO</span>
+        </div>
         <div class="card-bnp scroll-md" id="news-dash"></div>
       </div>
     </div>
@@ -2116,8 +2512,40 @@ function buildSpotPanels(){
   <!-- SPOT: Intel -->
   <div class="tab-panel" id="panel-intel">
     <div style="padding-top:10px">
-      <div class="card"><div class="card-h"><div class="card-t"><span class="dot" style="background:var(--pink)"></span>Live News</div><span class="badge b-cyan">LIVE</span></div>
-        <div class="card-bnp scroll-md" id="news-full"></div></div>
+      <div class="card">
+        <div class="card-h">
+          <div class="card-t"><span class="dot" style="background:var(--pink)"></span>Live News Feed</div>
+          <div style="display:flex;gap:5px;align-items:center">
+            <span class="badge b-cyan">${SupabaseNews.isConfigured()?'SUPABASE':'LIVE'}</span>
+            <span style="font-size:8px;color:var(--t4);cursor:pointer" onclick="showSupabaseConfig()" title="Configure Supabase">&#9881;</span>
+          </div>
+        </div>
+        <div class="breaking-bar" id="breaking-full">
+          <span class="breaking-label">BREAKING</span>
+          <span class="breaking-text"></span>
+          <span class="breaking-dismiss" onclick="SupabaseNews.dismissBreaking()">&times;</span>
+        </div>
+        <div class="trend-bar">
+          <span class="trend-label">Trending</span>
+          <span class="trend-bar-items"></span>
+        </div>
+        <div class="news-filters">
+          <span class="news-filter-btn active" data-type="tag" onclick="SupabaseNews.filterByTag('all',this)">All</span>
+          <span class="news-filter-btn" data-type="tag" onclick="SupabaseNews.filterByTag('BTC',this)">BTC</span>
+          <span class="news-filter-btn" data-type="tag" onclick="SupabaseNews.filterByTag('ETH',this)">ETH</span>
+          <span class="news-filter-btn" data-type="tag" onclick="SupabaseNews.filterByTag('SOL',this)">SOL</span>
+          <span class="news-filter-btn" data-type="tag" onclick="SupabaseNews.filterByTag('DEFI',this)">DEFI</span>
+          <span class="news-filter-btn" data-type="tag" onclick="SupabaseNews.filterByTag('MACRO',this)">MACRO</span>
+          <span class="news-filter-btn" data-type="tag" onclick="SupabaseNews.filterByTag('FLOW',this)">FLOW</span>
+          <span class="news-filter-btn" data-type="tag" onclick="SupabaseNews.filterByTag('VOL',this)">VOL</span>
+          <input class="news-search" type="text" placeholder="Search news..." oninput="SupabaseNews.filterBySearch(this.value)"/>
+        </div>
+        <div class="alert-sub-bar">
+          <span class="alert-sub-label">Alerts</span>
+          <span class="alert-chips"></span>
+        </div>
+        <div class="card-bnp scroll-md" style="max-height:600px" id="news-full"></div>
+      </div>
     </div>
   </div>
 
@@ -2639,14 +3067,33 @@ function renderBubbles(){
   });
 }
 
+function renderNewsItem(n) {
+  const impactCls = n.impact === 'breaking' ? 'news-breaking' : n.impact === 'high' ? 'news-high' : '';
+  const impactBadge = n.impact === 'breaking' ? '<span class="news-impact impact-breaking">BREAKING</span>'
+    : n.impact === 'high' ? '<span class="news-impact impact-high">HIGH</span>' : '';
+  const srcLabel = n.source ? '<span class="news-source">'+n.source+'</span>' : '';
+  const tagHtml = (n.tags||[]).map(function(g){return '<span class="tag '+(tagCls[g]||'tag-sym')+'">'+g+'</span>';}).join('');
+  const clickAttr = n.url && n.url !== '#' ? ' onclick="window.open(\''+n.url+'\',\'_blank\')"' : '';
+  return '<div class="news-item '+impactCls+'"'+clickAttr+'>'
+    +'<div class="news-time">'+n.time+' ago'+srcLabel+impactBadge+'</div>'
+    +'<div class="news-title">'+n.t+'</div>'
+    +'<div class="news-tags">'+tagHtml+'</div>'
+    +'</div>';
+}
+
 function renderNews(id){
   const el=document.getElementById(id);if(!el)return;
-  el.innerHTML=NEWS.map(n=>`
-    <div class="news-item">
-      <div class="news-time">${n.time} ago</div>
-      <div class="news-title">${n.t}</div>
-      <div class="news-tags">${n.tags.map(g=>`<span class="tag ${tagCls[g]||"tag-sym"}">${g}</span>`).join('')}</div>
-    </div>`).join('');
+  const items = id === 'news-dash' ? NEWS.slice(0, 8) : NEWS;
+  el.innerHTML = items.map(renderNewsItem).join('');
+}
+
+function renderNewsFiltered(id, articles){
+  const el=document.getElementById(id);if(!el)return;
+  if(articles.length === 0) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--t4);font-size:10px">No matching news</div>';
+    return;
+  }
+  el.innerHTML = articles.map(renderNewsItem).join('');
 }
 
 function renderFunding(id="fund-body"){
@@ -2701,14 +3148,29 @@ function renderSignals(){
   const colMap={vol:"sig-vol",sell:"sig-sell",squeeze:"sig-neutral",skew:"sig-vol",neutral:"sig-neutral"};
   const convCol=c=>c>=80?"var(--green)":c>=60?"var(--amber)":"var(--cyan)";
   const el=document.getElementById("signal-grid");if(!el)return;
-  el.innerHTML=sigs.slice(0,6).map(s=>`
-    <div class="sig-card ${colMap[s.sigType]||"sig-neutral"}" onclick="selectAsset('${s.s}')">
-      <div class="sig-header"><div><span class="sig-asset">${s.s}</span><span style="font-size:9px;color:var(--t4);margin-left:6px">${s.cat}</span></div><span class="sig-conv" style="color:${convCol(s.conviction)}">C:${s.conviction}</span></div>
+  el.innerHTML=sigs.slice(0,6).map(s=>{
+    const dte=LiveData.getDTE(s.expiry);
+    return `<div class="sig-card ${colMap[s.sigType]||"sig-neutral"}" onclick="selectAsset('${s.s}')">
+      <div class="sig-header">
+        <div><span class="sig-asset">${s.s}</span><span style="font-size:9px;color:var(--t4);margin-left:6px">${s.cat}</span></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="sig-expiry">${s.expiry} · ${dte}D</span>
+          <span class="sig-conv" style="color:${convCol(s.conviction)}">C:${s.conviction}</span>
+        </div>
+      </div>
       <div class="sig-title">${s.title}</div>
       <div class="sig-desc">${s.desc}</div>
-      <div class="sig-metrics">${s.metrics.map(m=>`<div class="sig-m"><div class="l">${m.l}</div><div class="v num-mono" style="color:${m.c}">${m.v}</div></div>`).join('')}</div>
+      <div class="sig-metrics">${s.metrics.map(m=>`<div class="sig-m"><div class="l">${m.l}</div><div class="v num-mono" style="color:${m.c}">${m.v}</div></div>`).join('')}
+        <div class="sig-m"><div class="l">STRIKE</div><div class="v num-mono" style="color:var(--t1)">$${s.strike.toLocaleString()}</div></div>
+        <div class="sig-m"><div class="l">TYPE</div><div class="v num-mono" style="color:var(--t1)">${s.optType==='C'?'CALL':'PUT'}</div></div>
+      </div>
       <div class="sig-strategy">${s.strategy}</div>
-    </div>`).join('');
+      <a class="sig-trade-link" href="${s.orderbookUrl}" target="_blank" onclick="event.stopPropagation()">
+        <span class="pt-arrow">&#9654;</span> Trade on PowerTrade · ${s.s} ${s.expiry} $${s.strike.toLocaleString()} ${s.optType}
+      </a>
+      <div class="sig-explain">${s.explain}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderExpectedMove(id,sym){
@@ -3399,6 +3861,14 @@ function initApp(){
   updateClock();
   setInterval(tick,7000);
   setInterval(updateClock,1000);
+  // Initialize Supabase news if configured
+  if (SupabaseNews.init()) {
+    SupabaseNews.fetchNews();
+    SupabaseNews.subscribe();
+    console.log('[App] Supabase news connected');
+  }
+  SupabaseNews.renderAlertChips();
+  SupabaseNews.computeTrends(NEWS);
   LiveData.start().catch(e=>console.warn('[LiveData] Start failed:',e.message));
   window.addEventListener("resize",()=>{renderBubbles();if(document.querySelector('#panel-fairvalue.active'))renderProbCone();});
   // Bind scanner search if present
@@ -3410,5 +3880,24 @@ function initApp(){
 // ═══ BOOT ═══════════════════════════════════════════════════════
 showApp();
 </script>
+
+<!-- Supabase Config Modal -->
+<div class="sb-config-overlay" onclick="if(event.target===this)hideSupabaseConfig()">
+  <div class="sb-config-modal">
+    <h3>Supabase News Configuration</h3>
+    <p>Connect your Supabase project to power the live news feed with real-time updates, filters, and custom alerts. Your credentials are stored locally in the browser.</p>
+    <label>Supabase Project URL</label>
+    <input id="sb-url-input" type="text" placeholder="https://your-project.supabase.co"/>
+    <label>Supabase Anon/Public Key</label>
+    <input id="sb-key-input" type="text" placeholder="eyJhbGciOiJIUzI1NiIs..."/>
+    <div class="sb-btns">
+      <button class="sb-btn-init" onclick="copySchemaSQL()" title="Copy CREATE TABLE SQL to clipboard">Copy Schema SQL</button>
+      <button class="sb-btn-cancel" onclick="hideSupabaseConfig()">Cancel</button>
+      <button class="sb-btn-save" onclick="saveSupabaseConfig()">Connect</button>
+    </div>
+    <div class="sb-status" id="sb-status-msg"></div>
+  </div>
+</div>
+
 </body>
 </html>
