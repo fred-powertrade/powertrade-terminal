@@ -2686,6 +2686,7 @@ function buildTabs(){
       <div class="mtab active" onclick="switchTab('lite-dashboard')">Dashboard</div>
       <div class="mtab" onclick="switchTab('lite-movers')">Top Movers</div>
       <div class="mtab" onclick="switchTab('lite-hype')">Hype Score</div>
+      <div class="mtab" onclick="switchTab('lite-tradeideas')">Trade Ideas</div>
       <div class="mtab" onclick="switchTab('intel')">News</div>`;
   } else if(currentMode==='spot'){
     el.innerHTML=`
@@ -2778,6 +2779,62 @@ function buildLitePanels(){
         </div></div>
         <div class="card-bnp scroll-md" id="lite-hype-list"></div>
       </div>
+    </div>
+  </div>
+  <!-- LITE: Trade Ideas -->
+  <div class="tab-panel" id="panel-lite-tradeideas">
+    <div style="padding-top:12px">
+      <!-- Beginner intro card (collapsible) -->
+      <div class="card mb" style="border-color:var(--cyan);border-width:1px">
+        <div class="card-h" onclick="toggleLiteIntro()" style="cursor:pointer;user-select:none">
+          <div class="card-t"><span class="dot" style="background:var(--cyan)"></span>Options 101 · What are options &amp; why trade them?</div>
+          <span id="lite-intro-chevron" style="font-size:10px;color:var(--cyan);transition:.2s">▼</span>
+        </div>
+        <div id="lite-intro-body" style="display:none">
+          <div style="padding:12px 14px 14px;font-size:11.5px;line-height:1.75;color:var(--t2)">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div style="background:rgba(14,234,12,.06);border:1px solid rgba(14,234,12,.15);border-radius:6px;padding:10px 12px">
+                <div style="font-size:10px;font-weight:700;color:var(--green);letter-spacing:.06em;margin-bottom:5px">CALL OPTION</div>
+                <div style="font-size:11px;color:var(--t1);margin-bottom:4px">The right to <strong>buy</strong> an asset at a fixed price.</div>
+                <div style="font-size:10.5px;color:var(--t3)">You profit when price goes <span style="color:var(--green)">up</span>. Risk is limited to what you paid.</div>
+                <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06);font-size:10px;color:var(--t4)">Example: Buy a BTC $100K Call expiring in 2 weeks. If BTC hits $105K, your call is worth $5K.</div>
+              </div>
+              <div style="background:rgba(255,59,48,.06);border:1px solid rgba(255,59,48,.15);border-radius:6px;padding:10px 12px">
+                <div style="font-size:10px;font-weight:700;color:var(--red);letter-spacing:.06em;margin-bottom:5px">PUT OPTION</div>
+                <div style="font-size:11px;color:var(--t1);margin-bottom:4px">The right to <strong>sell</strong> an asset at a fixed price.</div>
+                <div style="font-size:10.5px;color:var(--t3)">You profit when price goes <span style="color:var(--red)">down</span>. Risk is limited to the premium paid.</div>
+                <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06);font-size:10px;color:var(--t4)">Example: Buy a BTC $90K Put expiring in 2 weeks. If BTC drops to $85K, your put is worth $5K.</div>
+              </div>
+            </div>
+            <div style="background:rgba(255,255,255,.03);border-radius:6px;padding:10px 12px;margin-bottom:10px">
+              <div style="font-size:10px;font-weight:700;color:var(--amber);letter-spacing:.06em;margin-bottom:6px">WHY TRADE OPTIONS INSTEAD OF SPOT?</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                <div><div style="font-size:10px;color:var(--cyan);font-weight:600;margin-bottom:2px">Limited Risk</div><div style="font-size:10px;color:var(--t3)">You can never lose more than you paid. Unlike futures, no liquidations.</div></div>
+                <div><div style="font-size:10px;color:var(--cyan);font-weight:600;margin-bottom:2px">Leverage</div><div style="font-size:10px;color:var(--t3)">Control a large position with a small premium — amplify gains without margin calls.</div></div>
+                <div><div style="font-size:10px;color:var(--cyan);font-weight:600;margin-bottom:2px">Flexibility</div><div style="font-size:10px;color:var(--t3)">Profit from big moves in any direction, or earn income in sideways markets.</div></div>
+              </div>
+            </div>
+            <div style="background:rgba(255,255,255,.03);border-radius:6px;padding:10px 12px">
+              <div style="font-size:10px;font-weight:700;color:var(--pink);letter-spacing:.06em;margin-bottom:6px">KEY TERMS</div>
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 16px;font-size:10px">
+                <div><span style="color:var(--t2);font-weight:600">Strike price</span> — the fixed price you can buy/sell at</div>
+                <div><span style="color:var(--t2);font-weight:600">Premium</span> — the cost of the option (your max loss)</div>
+                <div><span style="color:var(--t2);font-weight:600">Expiry</span> — the date the option expires (worthless after)</div>
+                <div><span style="color:var(--t2);font-weight:600">IV (Implied Vol)</span> — market's fear gauge; high IV = expensive options</div>
+                <div><span style="color:var(--t2);font-weight:600">Delta</span> — how much the option moves per $1 of price change</div>
+                <div><span style="color:var(--t2);font-weight:600">In-the-money</span> — option already has intrinsic value right now</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Live trade ideas list -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div class="section-title" style="margin-bottom:0">Today's Trade Ideas</div>
+        <span class="badge b-cyan">OPTIONS</span>
+        <span style="font-size:9px;color:var(--t4)">Beginner-friendly setups · Updated every 60s</span>
+      </div>
+      <div id="lite-tradeideas-list"></div>
     </div>
   </div>
   <!-- LITE: News (reuses intel panel id) -->
@@ -4706,6 +4763,7 @@ function switchTab(t){
   if(t==='lite-dashboard')renderLiteDashboard();
   if(t==='lite-movers')renderLiteMovers();
   if(t==='lite-hype')renderLiteHype();
+  if(t==='lite-tradeideas')renderLiteTradeIdeas();
   if(t==='greeks'){renderVanna();renderCharm();renderVannaCharmSignal();}
   if(t==='simulator')updateSim();
   if(t==='optionslab'){renderIVHeatmap("iv-heatmap-full");renderIVRV("ivrv-body-full");renderFlowFeed("flow-feed-full","all");renderSkewMonitor();}
@@ -4862,6 +4920,180 @@ function renderLiteHype(){
   }).join('');
 }
 
+function toggleLiteIntro(){
+  const body=document.getElementById('lite-intro-body');
+  const chev=document.getElementById('lite-intro-chevron');
+  if(!body)return;
+  const open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  if(chev)chev.textContent=open?'▲':'▼';
+}
+
+function renderLiteTradeIdeas(){
+  const el=document.getElementById('lite-tradeideas-list');if(!el)return;
+  const ideas=_buildLiteTradeIdeas();
+  el.innerHTML=ideas.map(idea=>{
+    const stratColor={CALL:'var(--green)',PUT:'var(--red)',STRADDLE:'var(--amber)',SPREAD:'var(--cyan)',INCOME:'var(--pink)'}[idea.strat]||'var(--t3)';
+    const riskDots=['●','●','●'].map((d,i)=>
+      `<span style="color:${i<idea.risk?stratColor:'var(--border)'}">${d}</span>`).join('');
+    return`<div class="card mb" style="border-color:${stratColor}22;cursor:default">
+      <div class="card-b" style="padding:12px 14px">
+        <!-- Header row -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:9.5px;font-weight:700;letter-spacing:.07em;color:${stratColor};background:${stratColor}18;padding:2px 7px;border-radius:3px">${idea.strat}</span>
+          <span style="font-size:13px;font-weight:700;color:var(--t1)">${idea.asset}</span>
+          <span style="font-size:10px;color:var(--t4)" class="num-mono">$${idea.price.toLocaleString()}</span>
+          <span style="margin-left:auto;font-size:9px;color:var(--t4)">Risk ${riskDots}</span>
+        </div>
+        <!-- Title -->
+        <div style="font-size:12.5px;font-weight:600;color:var(--t1);margin-bottom:4px">${idea.title}</div>
+        <!-- Plain English -->
+        <div style="font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:10px">${idea.plain}</div>
+        <!-- Why now -->
+        <div style="background:rgba(255,255,255,.03);border-radius:5px;padding:8px 10px;margin-bottom:10px">
+          <div style="font-size:9px;font-weight:700;color:var(--cyan);letter-spacing:.07em;margin-bottom:4px">WHY NOW</div>
+          <div style="font-size:10.5px;color:var(--t2);line-height:1.6">${idea.why}</div>
+        </div>
+        <!-- Step by step -->
+        <div style="margin-bottom:10px">
+          <div style="font-size:9px;font-weight:700;color:var(--amber);letter-spacing:.07em;margin-bottom:6px">HOW TO TRADE THIS (STEP BY STEP)</div>
+          <ol style="margin:0;padding-left:18px;font-size:10.5px;color:var(--t2);line-height:1.8">${idea.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+        </div>
+        <!-- Metrics row -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+          ${idea.metrics.map(m=>`<div style="background:rgba(255,255,255,.025);border-radius:4px;padding:5px 7px">
+            <div style="font-size:8.5px;color:var(--t4);text-transform:uppercase;letter-spacing:.05em">${m.l}</div>
+            <div style="font-size:10.5px;font-weight:600;color:${m.c||'var(--t1)'}" class="num-mono">${m.v}</div>
+          </div>`).join('')}
+        </div>
+        <!-- Trade link -->
+        <a class="sig-trade-link" href="https://powertrade.com/trade/${idea.asset.toLowerCase()}" target="_blank" style="display:flex;align-items:center;gap:6px;text-decoration:none">
+          <span class="pt-arrow">&#9654;</span> Trade ${idea.asset} options on PowerTrade
+        </a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _buildLiteTradeIdeas(){
+  const ideas=[];
+  const assets=['BTC','ETH','SOL','BNB','AVAX'];
+  assets.forEach(sym=>{
+    const t=D.find(d=>d.s===sym);if(!t)return;
+    const iv=t.iv||50;const ch=t.ch24h||0;const gex=t.gammaExp||0;
+    const hype=(calcHypeScore(t)||{}).hype||50;
+    const p=t.p||0;
+    const strike=Math.round(p/1000)*1000||Math.round(p/100)*100;
+    const expLabel='28-Mar-25';
+
+    // High IV + downtrend → Buy Put
+    if(iv>60&&ch<-3){
+      ideas.push({
+        asset:sym,price:p,strat:'PUT',risk:2,
+        title:`Buy a ${sym} Put — Bet on Further Downside`,
+        plain:`${sym} has dropped <strong style="color:var(--red)">${ch.toFixed(1)}%</strong> in 24 hours and implied volatility is elevated at <strong>${iv.toFixed(0)}%</strong>. A put option lets you profit if the price keeps falling, while your maximum loss is capped at the premium you pay.`,
+        why:`IV is above 60% (market expects big moves). ${sym} has broken down today. Dealer Gamma Exposure is ${gex<0?'<strong style="color:var(--red)">negative — dealers are amplifying moves downward</strong>':'neutral'}, which may push price further.`,
+        steps:[
+          `Go to PowerTrade → select <strong>${sym}</strong>`,
+          `Pick expiry <strong>${expLabel}</strong> (gives you ~2-4 weeks for the move to play out)`,
+          `Choose a strike <strong>5–10% below current price</strong> (~$${Math.round(p*0.93).toLocaleString()})`,
+          `Check the <em>ask price</em> — this is your max loss per contract`,
+          `Buy 1 put contract. Monitor daily. Exit if you have 50% profit or at expiry.`
+        ],
+        metrics:[
+          {l:'IV',v:`${iv.toFixed(0)}%`,c:'var(--red)'},{l:'24H Chg',v:`${ch.toFixed(1)}%`,c:'var(--red)'},
+          {l:'Strategy',v:'Buy Put'},{l:'Max Loss',v:'Premium paid'}
+        ]
+      });
+    }
+    // Low IV + uptrend → Buy Call
+    if(iv<45&&ch>3&&ideas.length<5){
+      ideas.push({
+        asset:sym,price:p,strat:'CALL',risk:2,
+        title:`Buy a ${sym} Call — Ride the Uptrend`,
+        plain:`${sym} is up <strong style="color:var(--green)">${ch.toFixed(1)}%</strong> today with low implied volatility at <strong>${iv.toFixed(0)}%</strong>. Low IV means options are <em>cheap</em> right now — a great time to buy a call and ride any further upside with defined risk.`,
+        why:`IV below 45% means the market isn't pricing in a big move — but momentum says otherwise. ${hype>55?`Retail hype score is elevated at <strong>${hype}</strong>, suggesting further demand.`:`Trend is building. Calls are inexpensive and offer asymmetric upside.`}`,
+        steps:[
+          `Go to PowerTrade → select <strong>${sym}</strong>`,
+          `Pick expiry <strong>${expLabel}</strong>`,
+          `Choose a strike <strong>5–10% above current price</strong> (~$${Math.round(p*1.07).toLocaleString()}) for leverage, or <em>at-the-money</em> for higher probability`,
+          `Buy 1 call. The ask price is your total risk.`,
+          `Target: exit at 2× premium paid, or cut loss at 50% of premium.`
+        ],
+        metrics:[
+          {l:'IV',v:`${iv.toFixed(0)}%`,c:'var(--green)'},{l:'24H Chg',v:`+${ch.toFixed(1)}%`,c:'var(--green)'},
+          {l:'Strategy',v:'Buy Call'},{l:'Max Loss',v:'Premium paid'}
+        ]
+      });
+    }
+    // High IV + flat → Straddle (expecting volatility)
+    if(iv>65&&Math.abs(ch)<2&&ideas.length<5){
+      ideas.push({
+        asset:sym,price:p,strat:'STRADDLE',risk:3,
+        title:`${sym} Straddle — Big Move Expected, No Direction Needed`,
+        plain:`${sym} is basically flat today, but IV is very high at <strong>${iv.toFixed(0)}%</strong>. High IV means the market is bracing for a big move — you just don't know which way. A straddle profits if price moves sharply in <em>either</em> direction.`,
+        why:`IV at ${iv.toFixed(0)}% signals that big players are buying protection — a major move may be imminent. Flat price action right before a vol spike is a classic straddle setup.`,
+        steps:[
+          `Go to PowerTrade → select <strong>${sym}</strong>`,
+          `Pick expiry <strong>${expLabel}</strong>`,
+          `Buy 1 <strong>at-the-money call</strong> AND 1 <strong>at-the-money put</strong> at the same strike (~$${strike.toLocaleString()})`,
+          `Your total cost is call premium + put premium — this is your max loss`,
+          `You profit if ${sym} moves more than the total premium in either direction before expiry.`
+        ],
+        metrics:[
+          {l:'IV',v:`${iv.toFixed(0)}%`,c:'var(--amber)'},{l:'24H Chg',v:`${ch.toFixed(1)}%`},
+          {l:'Strategy',v:'Straddle'},{l:'Max Loss',v:'Both premiums'}
+        ]
+      });
+    }
+    // Moderate IV + positive GEX + mild uptrend → Bull Call Spread
+    if(iv>=45&&iv<=65&&ch>1&&gex>0&&ideas.length<5){
+      const hiStrike=Math.round(p*1.1/1000)*1000||Math.round(p*1.1/100)*100;
+      ideas.push({
+        asset:sym,price:p,strat:'SPREAD',risk:1,
+        title:`${sym} Bull Call Spread — Lower-Cost Bullish Bet`,
+        plain:`A bull call spread is a beginner-friendly way to bet on <strong style="color:var(--green)">${sym} going up</strong> while cutting your cost. You buy a call at a lower strike and sell one at a higher strike. This reduces the premium you pay — your profit is capped, but so is your cost.`,
+        why:`${sym} is up ${ch.toFixed(1)}% and dealer positioning (GEX: ${gex.toFixed(0)}) is positive — meaning market makers are likely <strong style="color:var(--green)">buying dips</strong> to hedge. This supports a gentle upside move rather than an explosive rally — perfect for a spread.`,
+        steps:[
+          `Go to PowerTrade → select <strong>${sym}</strong>`,
+          `Pick expiry <strong>${expLabel}</strong>`,
+          `Buy a call at <strong>~current price</strong> ($${strike.toLocaleString()})`,
+          `Sell a call at <strong>10% above current price</strong> ($${hiStrike.toLocaleString()}) — this reduces your cost`,
+          `Max profit: difference between strikes minus net premium paid`,
+          `Max loss: net premium paid. Hold until 75% of max profit reached.`
+        ],
+        metrics:[
+          {l:'GEX',v:`+${(gex/1e6).toFixed(1)}M`,c:'var(--green)'},{l:'24H Chg',v:`+${ch.toFixed(1)}%`,c:'var(--green)'},
+          {l:'Strategy',v:'Bull Spread'},{l:'Max Loss',v:'Net premium'}
+        ]
+      });
+    }
+  });
+  // Fallback: always show at least one BTC call idea
+  if(ideas.length===0){
+    const btc=D.find(d=>d.s==='BTC')||{s:'BTC',p:95000,iv:55,ch24h:0,gammaExp:0};
+    const iv=btc.iv||55;const p=btc.p||95000;
+    ideas.push({
+      asset:'BTC',price:p,strat:'CALL',risk:2,
+      title:'Buy a BTC Call — Classic Beginner Strategy',
+      plain:`A call option gives you the right to profit if Bitcoin rises, with your risk limited to a small premium. It's like buying a lottery ticket on BTC going up — but with better odds than a lottery.`,
+      why:`Bitcoin options market is active with IV at ${iv.toFixed(0)}%. Starting with a simple call is the best way to learn options with defined, limited risk.`,
+      steps:[
+        'Go to PowerTrade → select BTC',
+        'Choose an expiry 2–4 weeks out',
+        'Pick a strike 5–8% above current price for leverage',
+        'Buy 1 contract — your max loss is the premium shown',
+        'Exit at 2× profit or 50% loss to manage risk'
+      ],
+      metrics:[
+        {l:'IV',v:`${iv.toFixed(0)}%`},{l:'Strategy',v:'Buy Call'},
+        {l:'Max Loss',v:'Premium only'},{l:'Difficulty',v:'Beginner'}
+      ]
+    });
+  }
+  return ideas.slice(0,5);
+}
+
 function renderAll(){
   renderMkt();renderFG();renderRegime();renderTicker();renderKPIRow();
   const tab=document.querySelector('.tab-panel.active')?.id;
@@ -4874,6 +5106,7 @@ function renderAll(){
     if(tab==='panel-lite-dashboard')renderLiteDashboard();
     if(tab==='panel-lite-movers')renderLiteMovers();
     if(tab==='panel-lite-hype')renderLiteHype();
+    if(tab==='panel-lite-tradeideas')renderLiteTradeIdeas();
   } else if(currentMode==='spot'){
     if(tab==='panel-dashboard'){renderTreemap();renderGL();renderBubbles();renderNews("news-dash");renderSpotHypeScore();renderSpotBreakoutSignals();}
     if(tab==='panel-funding'){renderFunding("fund-body");renderLiqData();}
