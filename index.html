@@ -848,14 +848,14 @@ html{font-size:15px}
     <!-- Phase 1: BTC/ETH header prices are clickable -->
     <div class="hdr-stat" role="button" tabindex="0" aria-label="View BTC deep dive"
       style="cursor:pointer" onclick="selectAsset('BTC')"
-      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectAsset('BTC');}">
+      onkeydown="handleSelectAssetKeydown(event,'BTC')">
       <span class="l">BTC</span>
       <span class="v num-mono" id="h-btcprice" style="color:var(--btc)">—</span>
     </div>
     <div class="hdr-div"></div>
     <div class="hdr-stat" role="button" tabindex="0" aria-label="View ETH deep dive"
       style="cursor:pointer" onclick="selectAsset('ETH')"
-      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectAsset('ETH');}">
+      onkeydown="handleSelectAssetKeydown(event,'ETH')">
       <span class="l">ETH</span>
       <span class="v num-mono" id="h-ethprice" style="color:var(--eth)">—</span>
     </div>
@@ -1103,6 +1103,15 @@ let D=[], selectedAsset=null, tmMode="mindshare", glTab="gain", bubTF="24h", tbl
     sigFilter="all", flowFilter="all", flowFilter2="all", stratFilter="all", catFilter="All";
 // Phase 5: tracks the element that opened the deep-dive modal so we can return focus on close
 let _deepDiveOpener=null;
+// Focus-trap cache: populated when modal opens, cleared on close
+let _deepDiveFocusable=null;
+
+// ── Shared display helpers (avoids duplication across panel/modal functions) ──
+const TOKEN_COLORS={BTC:'#f7931a',ETH:'#7A57DD',SOL:'#9945ff',BNB:'#F3BA2F',XRP:'#346AA9',DOGE:'#C2A633'};
+const fundingRateColor=f=>f>0.03?'var(--red)':f<-0.01?'var(--green)':'var(--t2)';
+const convictionColor=c=>c>=70?'var(--green)':c>=45?'var(--amber)':'var(--t3)';
+/** Keyboard handler for all "button-ified" divs that call selectAsset. Global so inline HTML can reference it. */
+function handleSelectAssetKeydown(e,sym){if(e.key==='Enter'||e.key===' '){e.preventDefault();selectAsset(sym);}}
 
 // ─── DATA ENGINE ─────────────────────────────────────────────────
 function gen(){
@@ -3650,7 +3659,7 @@ function renderTreemap(){
       data-sym="${t.s}"
       style="width:${w}px;height:${h}px;background:${bg};cursor:pointer"
       onclick="selectAsset('${t.s}')"
-      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectAsset('${t.s}');}">
+      onkeydown="handleSelectAssetKeydown(event,'${t.s}')">
       <div class="s" style="font-size:${pct>5?12:10}px">${t.s}</div>
       <div class="p ${cCls(chg)}">${fP(chg)}</div>
     </div>`;
@@ -3679,40 +3688,38 @@ function renderBubbles(){
   const chgKey=bubTF==="1h"?"ch1h":bubTF==="7d"?"ch7d":"ch24h";
   const tokens=[...D].filter(t=>t.mc>100e6).slice(0,40);
   const maxMC=Math.max(...tokens.map(t=>t.mc));
-  // Phase 1: Store bubble hit regions for click detection
-  const bubbleHits=[];
+  // Store hit regions on the canvas element so re-renders update them without re-binding handlers
+  canvas._bubbleHits=[];
   tokens.forEach(t=>{
     const chg=t[chgKey]||0;
     const r=Math.sqrt(t.mc/maxMC)*45+6;
     const x=((sr(t.seed,40))*0.85+0.075)*W;
     const y=((sr(t.seed,41))*0.8+0.1)*H;
-    bubbleHits.push({sym:t.s,x,y,r});
+    canvas._bubbleHits.push({sym:t.s,x,y,r});
     const color=chg>=0?`rgba(14,234,12,${Math.min(.7,.15+Math.abs(chg)/30)})`:`rgba(251,63,63,${Math.min(.7,.15+Math.abs(chg)/30)})`;
     ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
     ctx.fillStyle="#fff";ctx.font=`bold ${r>15?10:8}px 'Inter'`;ctx.textAlign="center";
     ctx.fillText(t.s,x,y-2);ctx.font=`${r>15?9:7}px 'Space Mono'`;ctx.fillStyle="rgba(255,255,255,.6)";
     ctx.fillText(fP(chg),x,y+10);
   });
-  // Phase 1: Wire canvas click to selectAsset via distance-based hit detection
-  canvas.style.cursor='default';
-  canvas.onclick=function(ev){
-    const rect=canvas.getBoundingClientRect();
-    const mx=(ev.clientX-rect.left);
-    const my=(ev.clientY-rect.top);
-    let hit=null,minDist=Infinity;
-    for(const b of bubbleHits){
-      const d=Math.sqrt((mx-b.x)**2+(my-b.y)**2);
-      if(d<=b.r&&d<minDist){minDist=d;hit=b;}
-    }
-    if(hit)selectAsset(hit.sym);
-  };
-  canvas.onmousemove=function(ev){
-    const rect=canvas.getBoundingClientRect();
-    const mx=(ev.clientX-rect.left);
-    const my=(ev.clientY-rect.top);
-    const isOver=bubbleHits.some(b=>Math.sqrt((mx-b.x)**2+(my-b.y)**2)<=b.r);
-    canvas.style.cursor=isOver?'pointer':'default';
-  };
+  // Attach handlers only once — they read canvas._bubbleHits, which is always current
+  if(!canvas._handlersAttached){
+    canvas._handlersAttached=true;
+    canvas.onclick=function(ev){
+      const hits=canvas._bubbleHits||[];
+      const rect=canvas.getBoundingClientRect();
+      const mx=ev.clientX-rect.left,my=ev.clientY-rect.top;
+      let hit=null,minDist=Infinity;
+      for(const b of hits){const d=Math.sqrt((mx-b.x)**2+(my-b.y)**2);if(d<=b.r&&d<minDist){minDist=d;hit=b;}}
+      if(hit)selectAsset(hit.sym);
+    };
+    canvas.onmousemove=function(ev){
+      const hits=canvas._bubbleHits||[];
+      const rect=canvas.getBoundingClientRect();
+      const mx=ev.clientX-rect.left,my=ev.clientY-rect.top;
+      canvas.style.cursor=hits.some(b=>Math.sqrt((mx-b.x)**2+(my-b.y)**2)<=b.r)?'pointer':'default';
+    };
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -3724,19 +3731,24 @@ function renderBubbles(){
  * @param {string} containerId  DOM element ID
  * @param {Array<{time,open,high,low,close}>} candles  Array of OHLCV bars
  */
-function renderCandles(containerId, candles) {
+function renderCandles(containerId, candles, opts) {
   const el = document.getElementById(containerId); if (!el) return;
+  // Disconnect any previous ResizeObserver stored on this element to prevent leaks
+  if (el._chartResizeObserver) { el._chartResizeObserver.disconnect(); el._chartResizeObserver = null; }
   el.innerHTML = '';
   if (typeof LightweightCharts === 'undefined') { el.innerHTML = '<div style="padding:20px;color:var(--t4);font-size:10px">Lightweight Charts library not loaded</div>'; return; }
   const isDark = !document.documentElement.getAttribute('data-theme');
+  const o = opts || {};
   const chart = LightweightCharts.createChart(el, {
     width: el.offsetWidth || 600,
-    height: el.offsetHeight || 280,
+    height: o.height || el.offsetHeight || 280,
     layout: { background: { color: 'transparent' }, textColor: isDark ? '#A1A1AA' : '#333340' },
     grid: { vertLines: { color: 'rgba(255,255,255,0.04)' }, horzLines: { color: 'rgba(255,255,255,0.04)' } },
     crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
     rightPriceScale: { borderColor: 'rgba(255,255,255,0.06)' },
-    timeScale: { borderColor: 'rgba(255,255,255,0.06)', timeVisible: true },
+    timeScale: { borderColor: 'rgba(255,255,255,0.06)', timeVisible: o.timeVisible !== false },
+    handleScale: o.handleScale || false,
+    handleScroll: o.handleScroll || false,
   });
   const series = chart.addCandlestickSeries({
     upColor: '#0EEA0C', downColor: '#FB3F3F',
@@ -3745,9 +3757,10 @@ function renderCandles(containerId, candles) {
   });
   series.setData(candles);
   chart.timeScale().fitContent();
-  // Resize observer
   if (window.ResizeObserver) {
-    new ResizeObserver(() => { chart.applyOptions({ width: el.offsetWidth }); }).observe(el);
+    const ro = new ResizeObserver(() => { if (el.offsetWidth) chart.applyOptions({ width: el.offsetWidth }); });
+    ro.observe(el);
+    el._chartResizeObserver = ro;  // Store so callers can disconnect on cleanup
   }
 }
 
@@ -3859,7 +3872,7 @@ function renderFunding(id="fund-body"){
     // Phase 1: Funding bars are clickable — clicking opens deep dive for that token
     return`<div class="fb" role="button" tabindex="0" aria-label="View ${t.s} deep dive"
       style="cursor:pointer" onclick="selectAsset('${t.s}')"
-      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectAsset('${t.s}');}">
+      onkeydown="handleSelectAssetKeydown(event,'${t.s}')">
       <div class="fb-s">${t.s}</div><div class="fb-bar"><div class="fb-fill" style="width:${Math.min(100,pct*100).toFixed(0)}%;background:${c};${isPos?"left:0":"right:0"}"></div></div><div class="fb-v num-mono" style="color:${c}">${isPos?"+":""}${(t.fund*100).toFixed(3)}%</div></div>`;
   }).join('');
 }
@@ -3999,7 +4012,7 @@ function renderFlowFeed(id,filter){
     // Phase 1: Flow items are clickable — clicking opens deep dive for that asset
     return`<div class="flow-item" role="button" tabindex="0" aria-label="View ${f.asset} deep dive"
       style="cursor:pointer" onclick="selectAsset('${f.asset}')"
-      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectAsset('${f.asset}');}">
+      onkeydown="handleSelectAssetKeydown(event,'${f.asset}')">
       <div class="flow-type" style="background:${typeBg};color:${typeColor}">${f.type}</div>
       <div class="flow-main"><div class="flow-trade">${f.asset} ${f.expiry} $${f.strike.toFixed(0)} ${f.type}${f.isSweep?` <span class="flow-sweep">${f.ot}</span>`:''}${f.isLarge?` <span class="flow-sweep" style="background:var(--violet2);color:var(--violet)">LARGE</span>`:''}</div>
         <div class="flow-detail num-mono">${f.contracts} cntrcts · ${f.venue}${f.isLive?' <span style="color:var(--green);font-size:7px">● LIVE</span>':''}${f.iv?' · IV '+f.iv+'%':''}</div></div>
@@ -4587,6 +4600,55 @@ function selectAsset(sym){
   openDeepDive(sym);
 }
 
+// ── Alpha Summary & Playbook (module-scope so they are not recreated on every modal open) ──
+
+/**
+ * Generates a plain-English narrative from the token's signals.
+ * @param {object} t       Token data object
+ * @param {object|null} fv Fair-value result from calcFairValue
+ * @param {number} fvDelta % deviation of consensus FV from spot
+ * @param {string} sym     Token symbol (for FV sentence)
+ */
+function buildAlphaSummary(t, fv, fvDelta, sym){
+  const lines=[];
+  if(t.fund>0.03&&t.rsi>70)
+    lines.push('📍 <strong>Retail is heavily long</strong> — Funding is extreme ('+((t.fund*100).toFixed(3))+'%) and RSI is overbought ('+t.rsi+'). <em>High risk of a long-squeeze cascade if spot breaks key support.</em>');
+  else if(t.fund<-0.01&&t.rsi<35)
+    lines.push('📍 <strong>Shorts are crowded</strong> — Negative funding ('+((t.fund*100).toFixed(3))+'%) and oversold RSI ('+t.rsi+'). <em>Short-squeeze potential; watch for a sharp snapback rally.</em>');
+  if(t.ivRank>70)
+    lines.push('📊 <strong>Vol is expensive</strong> — IV Rank at '+t.ivRank+'%. Options premiums are elevated. <em>Prefer selling vol strategies (spreads, condors) over buying premium.</em>');
+  else if(t.ivRank<25)
+    lines.push('📊 <strong>Vol is historically cheap</strong> — IV Rank at '+t.ivRank+'%. <em>Buying debit spreads or calls/puts offers asymmetric leverage.</em>');
+  if(t.gammaExp<0)
+    lines.push('⚡ <strong>Negative GEX environment</strong> — Dealers are short gamma, amplifying price moves in both directions. <em>Expect larger-than-usual candles; size positions accordingly.</em>');
+  if(t.lsRatio>1.2)
+    lines.push('📈 <strong>Longs dominant</strong> — L/S Ratio of '+t.lsRatio.toFixed(2)+'. Broad consensus is bullish, which may limit upside and increase air-pocket risk on a reversal.');
+  else if(t.lsRatio<0.85)
+    lines.push('📉 <strong>Shorts dominant</strong> — L/S Ratio of '+t.lsRatio.toFixed(2)+'. Broad consensus is bearish, increasing the probability of a violent short-squeeze rally.');
+  if(fv&&Math.abs(fvDelta)>8)
+    lines.push('💡 <strong>Fair-value divergence: '+fvDelta.toFixed(1)+'%</strong> — Consensus model sees '+(sym||t.s)+' as '+(fvDelta>0?'<em>undervalued</em> vs spot':'<em>overvalued</em> vs spot')+'. Multi-model confidence: '+(fv.confidence).toFixed(0)+'%.');
+  if(!lines.length)
+    lines.push('No extreme signals detected. Metrics are within normal ranges — monitor for developing setups.');
+  return lines.join('<br><br>');
+}
+
+/**
+ * Derives a structured trade idea from token metrics and expected-move math.
+ * @param {object} t       Token data object
+ * @param {object|null} fv Fair-value result
+ * @param {number} fvDelta % deviation of consensus FV from spot
+ */
+function buildPlaybook(t, fv, fvDelta){
+  const em=calcExpectedMove(t.p,t.iv,7); // 7-day expected move
+  const isLong=t.fund<0.01&&t.rsi<65&&(!fv||fvDelta>0);
+  const dir=isLong?'LONG':'SHORT';
+  const dirColor=isLong?'var(--green)':'var(--red)';
+  const entryNote=isLong?'Buy dip into support / IV expansion reversal':'Fade rally; enter on distribution near resistance';
+  const stop=isLong?fPr(t.p-em.move1s):fPr(t.p+em.move1s);
+  const target=isLong?fPr(t.p+em.move2s):fPr(t.p-em.move2s);
+  return{dir,dirColor,entryNote,stop,target,sizing:'1–2% NAV max (defined-risk)',pctMove:em.pctMove1s.toFixed(1)};
+}
+
 // ═══ SIDE DETAIL PANEL (Phase 2) ══════════════════════════════
 /**
  * openDetailPanel — Populates #detail-panel with a compact inline view of the
@@ -4596,11 +4658,9 @@ function selectAsset(sym){
 function openDetailPanel(sym) {
   const t = D.find(d => d.s === sym); if (!t) return;
   const panel = document.getElementById('detail-panel'); if (!panel) return;
-  const tokenColors = {BTC:'#f7931a',ETH:'#7A57DD',SOL:'#9945ff',BNB:'#F3BA2F',XRP:'#346AA9',DOGE:'#C2A633'};
-  const iconBg = tokenColors[sym] || 'var(--surface4)';
+  const iconBg = TOKEN_COLORS[sym] || 'var(--surface4)';
   const chgColor = t.ch24h >= 0 ? 'var(--green)' : 'var(--red)';
   const chgSign = t.ch24h >= 0 ? '+' : '';
-  const fundColor = t.fund > 0.03 ? 'var(--red)' : t.fund < -0.01 ? 'var(--green)' : 'var(--t2)';
   const ivColor = t.ivRank > 70 ? 'var(--red)' : t.ivRank < 25 ? 'var(--green)' : 'var(--amber)';
   panel.innerHTML = `
     <div class="dp-header">
@@ -4611,18 +4671,17 @@ function openDetailPanel(sym) {
       </div>
       <button class="btn btn-gray btn-sm" onclick="openDeepDive('${sym}')">Full Deep Dive &rarr;</button>
       <button class="btn btn-gray btn-sm" onclick="openOrderbook('${sym}')">Orderbook</button>
-      <button class="btn btn-gray btn-sm" onclick="navigator.clipboard&&navigator.clipboard.writeText('${sym}');showToast('${sym} copied','')">Copy</button>
+      <button class="btn btn-gray btn-sm" onclick="navigator.clipboard?.writeText('${sym}').then(()=>showToast('${sym} copied','')).catch(()=>showToast('Copy failed',true))">Copy</button>
       <button class="dp-close" aria-label="Close detail panel" onclick="closeDetailPanel()">&#x2715;</button>
     </div>
     <div class="dp-grid">
       <div class="dp-stat"><div class="l">Price</div><div class="v num-mono" style="color:var(--t1)">${fPr(t.p)}</div></div>
       <div class="dp-stat"><div class="l">Market Cap</div><div class="v num-mono" style="color:var(--cyan)">${fmt(t.mc)}</div></div>
       <div class="dp-stat"><div class="l">IV Rank</div><div class="v num-mono" style="color:${ivColor}">${t.ivRank}%</div></div>
-      <div class="dp-stat"><div class="l">Funding</div><div class="v num-mono" style="color:${fundColor}">${t.fund>=0?'+':''}${(t.fund*100).toFixed(3)}%</div></div>
-      <div class="dp-stat"><div class="l">Conviction</div><div class="v num-mono" style="color:${t.conviction>=70?'var(--green)':t.conviction>=45?'var(--amber)':'var(--t3)'}">${t.conviction}</div></div>
+      <div class="dp-stat"><div class="l">Funding</div><div class="v num-mono" style="color:${fundingRateColor(t.fund)}">${t.fund>=0?'+':''}${(t.fund*100).toFixed(3)}%</div></div>
+      <div class="dp-stat"><div class="l">Conviction</div><div class="v num-mono" style="color:${convictionColor(t.conviction)}">${t.conviction}</div></div>
     </div>`;
   panel.classList.add('open');
-  // Scroll the panel into view smoothly
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -4680,10 +4739,9 @@ function openExplainModal(type, subtype, signalData) {
 
 function _showExplainModal(title, formula, components, backtest) {
   document.getElementById('explain-title').textContent = title;
-  // Phase 4: Parse N and precision to derive confidence note
   const n = parseInt(backtest.n, 10) || 0;
   const precStr = String(backtest.precision || '0%');
-  const precNum = parseFloat(precStr) || 0;
+  const precNum = parseFloat(precStr.replace('%','')) || 0;
   const isLowConfidence = precNum < 50 || n < 20;
   const confNote = isLowConfidence
     ? `<div style="background:rgba(251,63,63,.06);border:1px solid rgba(251,63,63,.2);border-radius:4px;padding:8px 10px;font-size:9.5px;color:var(--red);margin-top:10px">
@@ -4736,13 +4794,12 @@ function openDeepDive(sym){
   const chg24hColor=t.ch24h>=0?'var(--green)':'var(--red)';
   const chgSign=t.ch24h>=0?'+':'';
 
-  const tokenColors={BTC:'#f7931a',ETH:'#7A57DD',SOL:'#9945ff',BNB:'#F3BA2F',XRP:'#346AA9',DOGE:'#C2A633'};
-  const iconBg=tokenColors[sym]||'var(--surface4)';
+  const iconBg=TOKEN_COLORS[sym]||'var(--surface4)';
 
   const fvDelta=fv?((fv.consensus-t.p)/t.p*100):0;
   const fvColor=fvDelta>0?'var(--green)':fvDelta<0?'var(--red)':'var(--t3)';
   const rsiColor=t.rsi>70?'var(--red)':t.rsi<30?'var(--green)':'var(--t2)';
-  const fundColor=t.fund>0.03?'var(--red)':t.fund<-0.01?'var(--green)':'var(--t2)';
+  const fundColor=fundingRateColor(t.fund);
 
   const h=t.hist||{};
   const hPrice=h.price||{};
@@ -4755,45 +4812,8 @@ function openDeepDive(sym){
   function sentDelta(now,old){const d=now-old;return`<span class="${d>0?'hist-delta-pos':d<0?'hist-delta-neg':'hist-delta-neu'}">${d>0?'+':''}${d}</span>`;}
   function fundDelta(now,old){const d=(now-old)*100;return`<span class="${d<0?'hist-delta-pos':d>0?'hist-delta-neg':'hist-delta-neu'}">${d>0?'+':''}${d.toFixed(3)}%</span>`;}
 
-  // ── Phase 3: Plain-English Alpha Summary ─────────────────────────
-  function buildAlphaSummary(t){
-    const lines=[];
-    if(t.fund>0.03&&t.rsi>70)
-      lines.push('📍 <strong>Retail is heavily long</strong> — Funding is extreme ('+((t.fund*100).toFixed(3))+'%) and RSI is overbought ('+t.rsi+'). <em>High risk of a long-squeeze cascade if spot breaks key support.</em>');
-    else if(t.fund<-0.01&&t.rsi<35)
-      lines.push('📍 <strong>Shorts are crowded</strong> — Negative funding ('+((t.fund*100).toFixed(3))+'%) and oversold RSI ('+t.rsi+'). <em>Short-squeeze potential; watch for a sharp snapback rally.</em>');
-    if(t.ivRank>70)
-      lines.push('📊 <strong>Vol is expensive</strong> — IV Rank at '+t.ivRank+'%. Options premiums are elevated. <em>Prefer selling vol strategies (spreads, condors) over buying premium.</em>');
-    else if(t.ivRank<25)
-      lines.push('📊 <strong>Vol is historically cheap</strong> — IV Rank at '+t.ivRank+'%. <em>Buying debit spreads or calls/puts offers asymmetric leverage.</em>');
-    if(t.gammaExp<0)
-      lines.push('⚡ <strong>Negative GEX environment</strong> — Dealers are short gamma, amplifying price moves in both directions. <em>Expect larger-than-usual candles; size positions accordingly.</em>');
-    if(t.lsRatio>1.2)
-      lines.push('📈 <strong>Longs dominant</strong> — L/S Ratio of '+t.lsRatio.toFixed(2)+'. Broad consensus is bullish, which may limit upside and increase air-pocket risk on a reversal.');
-    else if(t.lsRatio<0.85)
-      lines.push('📉 <strong>Shorts dominant</strong> — L/S Ratio of '+t.lsRatio.toFixed(2)+'. Broad consensus is bearish, increasing the probability of a violent short-squeeze rally.');
-    if(fv&&Math.abs(fvDelta)>8)
-      lines.push('💡 <strong>Fair-value divergence: '+fvDelta.toFixed(1)+'%</strong> — Consensus model sees '+sym+' as '+(fvDelta>0?'<em>undervalued</em> vs spot':'<em>overvalued</em> vs spot')+'. Multi-model confidence: '+(fv.confidence).toFixed(0)+'%.');
-    if(!lines.length)
-      lines.push('No extreme signals detected. Metrics are within normal ranges — monitor for developing setups.');
-    return lines.join('<br><br>');
-  }
-
-  // ── Phase 3: Actionable Playbook ─────────────────────────────────
-  function buildPlaybook(t){
-    const em=calcExpectedMove(t.p,t.iv,7); // 7-day expected move
-    const isLong=t.fund<0.01&&t.rsi<65&&(!fv||fvDelta>0);
-    const dir=isLong?'LONG':'SHORT';
-    const dirColor=isLong?'var(--green)':'var(--red)';
-    const entryNote=isLong?'Buy dip into support / IV expansion reversal':'Fade rally; enter on distribution near resistance';
-    const stop=isLong?fPr(t.p-em.move1s):fPr(t.p+em.move1s);
-    const target=isLong?fPr(t.p+em.move2s):fPr(t.p-em.move2s);
-    const sizing='1–2% NAV max (defined-risk)';
-    return{dir,dirColor,entryNote,stop,target,sizing,pctMove:em.pctMove1s.toFixed(1)};
-  }
-
-  const alphaSummary=buildAlphaSummary(t);
-  const pb=buildPlaybook(t);
+  const alphaSummary=buildAlphaSummary(t,fv,fvDelta,sym);
+  const pb=buildPlaybook(t,fv,fvDelta);
 
   box.innerHTML=`
     <div class="modal-header">
@@ -4810,7 +4830,7 @@ function openDeepDive(sym){
       <div class="modal-kpi"><div class="l">24H Change</div><div class="v num-mono" style="color:${chg24hColor}">${chgSign}${t.ch24h}%</div></div>
       <div class="modal-kpi"><div class="l">Market Cap</div><div class="v num-mono" style="color:var(--cyan)">${fmt(t.mc)}</div></div>
       <div class="modal-kpi"><div class="l">Volume 24H</div><div class="v num-mono">${fmt(t.vol)}</div></div>
-      <div class="modal-kpi"><div class="l">Conviction</div><div class="v num-mono" style="color:${t.conviction>=70?'var(--green)':t.conviction>=45?'var(--amber)':'var(--t3)'}">${t.conviction}</div></div>
+      <div class="modal-kpi"><div class="l">Conviction</div><div class="v num-mono" style="color:${convictionColor(t.conviction)}">${t.conviction}</div></div>
     </div>
     <div class="modal-body">
 
@@ -4978,93 +4998,67 @@ function openDeepDive(sym){
   document.body.style.overflow='hidden';
 
   // Phase 3.1: Render Lightweight Charts candlestick after DOM is ready
-  requestAnimationFrame(()=>_renderDeepDiveChart(sym, t));
+  // Render candlestick chart via the shared renderCandles helper (timeVisible:false for compact modal view)
+  requestAnimationFrame(()=>renderCandles('dd-chart-'+sym, _generateSyntheticCandles(t), {height:210,timeVisible:false,handleScale:true,handleScroll:true}));
 
-  // Phase 5: Move focus inside modal
+  // Cache focusable elements once after DOM is ready; used by the Tab focus-trap handler
   requestAnimationFrame(()=>{
+    const box=document.getElementById('deepdive-box');
+    if(box){
+      _deepDiveFocusable=Array.from(box.querySelectorAll('button,[tabindex]:not([tabindex="-1"]),a,input,select,textarea'))
+        .filter(el=>!el.disabled&&el.offsetParent!==null);
+    }
     const closeBtn=document.getElementById('deepdive-close-btn');
     if(closeBtn)closeBtn.focus();
   });
 }
 
 /** Generates synthetic 30-day OHLCV candles from the token's current data. */
+const _SQRT365=Math.sqrt(365); // precomputed constant shared by _generateSyntheticCandles
 function _generateSyntheticCandles(t){
   const candles=[];
   const now=Math.floor(Date.now()/1000);
-  const dayS=86400;
   let price=t.p*(1-(t.ch24h/100)*0.95); // approx 30d-ago start
   const vol=t.iv/100;
+  const drift=(t.ch24h/100)/30;
   for(let i=29;i>=0;i--){
-    const time=now-i*dayS;
-    const drift=(t.ch24h/100)/30;
-    const noise=(Math.random()-0.48)*vol/Math.sqrt(365)*price;
+    const time=now-i*86400;
+    const noise=(Math.random()-0.48)*vol/_SQRT365*price;
     const open=price;
     const close=price*(1+drift)+noise;
-    const high=Math.max(open,close)*(1+Math.random()*vol*0.3/Math.sqrt(365));
-    const low=Math.min(open,close)*(1-Math.random()*vol*0.3/Math.sqrt(365));
+    const high=Math.max(open,close)*(1+Math.random()*vol*0.3/_SQRT365);
+    const low=Math.min(open,close)*(1-Math.random()*vol*0.3/_SQRT365);
     candles.push({time,open:+open.toFixed(4),high:+high.toFixed(4),low:+low.toFixed(4),close:+close.toFixed(4)});
     price=close;
   }
   return candles;
 }
 
-/** Renders a LightweightCharts candlestick inside the deep-dive modal. */
-function _renderDeepDiveChart(sym, t){
-  const chartId='dd-chart-'+sym;
-  const el=document.getElementById(chartId);
-  if(!el)return;
-  if(typeof LightweightCharts==='undefined'){
-    el.innerHTML='<div style="padding:20px;color:var(--t4);font-size:10px;text-align:center">Chart library not available</div>';
-    return;
-  }
-  el.innerHTML='';
-  const isDark=!document.documentElement.getAttribute('data-theme');
-  const chart=LightweightCharts.createChart(el,{
-    width:el.offsetWidth||740,
-    height:210,
-    layout:{background:{color:'transparent'},textColor:isDark?'#A1A1AA':'#333340'},
-    grid:{vertLines:{color:'rgba(255,255,255,0.04)'},horzLines:{color:'rgba(255,255,255,0.04)'}},
-    crosshair:{mode:LightweightCharts.CrosshairMode.Normal},
-    rightPriceScale:{borderColor:'rgba(255,255,255,0.06)'},
-    timeScale:{borderColor:'rgba(255,255,255,0.06)',timeVisible:false},
-    handleScale:true,handleScroll:true,
-  });
-  const series=chart.addCandlestickSeries({
-    upColor:'#0EEA0C',downColor:'#FB3F3F',
-    borderUpColor:'#0EEA0C',borderDownColor:'#FB3F3F',
-    wickUpColor:'#0EEA0C',wickDownColor:'#FB3F3F',
-  });
-  series.setData(_generateSyntheticCandles(t));
-  chart.timeScale().fitContent();
-  if(window.ResizeObserver){
-    new ResizeObserver(()=>{if(el.offsetWidth)chart.applyOptions({width:el.offsetWidth});}).observe(el);
-  }
-}
+// _renderDeepDiveChart removed — openDeepDive now calls renderCandles() directly
 
 function closeDeepDive(e){
   if(e&&e.target!==document.getElementById('deepdive-overlay'))return;
   document.getElementById('deepdive-overlay').classList.add('hidden');
   document.body.style.overflow='';
+  // Disconnect the chart ResizeObserver stored on the chart container (prevents memory leak)
+  const chartEl=selectedAsset?document.getElementById('dd-chart-'+selectedAsset):null;
+  if(chartEl&&chartEl._chartResizeObserver){chartEl._chartResizeObserver.disconnect();chartEl._chartResizeObserver=null;}
   selectedAsset=null;
-  // Phase 5: Return focus to the triggering element
+  _deepDiveFocusable=null;
+  // Return focus to the triggering element
   if(_deepDiveOpener&&typeof _deepDiveOpener.focus==='function'){
     try{_deepDiveOpener.focus();}catch(_){}
     _deepDiveOpener=null;
   }
 }
 
-// Phase 5: Escape closes modal + Tab traps focus inside it
+// Escape closes modal + Tab traps focus inside it using the pre-cached focusable list
 document.addEventListener('keydown',function(e){
   const overlay=document.getElementById('deepdive-overlay');
   if(!overlay||overlay.classList.contains('hidden'))return;
   if(e.key==='Escape'){closeDeepDive();return;}
-  if(e.key==='Tab'){
-    // Trap Tab focus inside #deepdive-box
-    const box=document.getElementById('deepdive-box');
-    if(!box)return;
-    const focusable=Array.from(box.querySelectorAll('button,[tabindex]:not([tabindex="-1"]),a,input,select,textarea')).filter(el=>!el.disabled&&el.offsetParent!==null);
-    if(!focusable.length)return;
-    const first=focusable[0],last=focusable[focusable.length-1];
+  if(e.key==='Tab'&&_deepDiveFocusable&&_deepDiveFocusable.length){
+    const first=_deepDiveFocusable[0],last=_deepDiveFocusable[_deepDiveFocusable.length-1];
     if(e.shiftKey){if(document.activeElement===first){e.preventDefault();last.focus();}}
     else{if(document.activeElement===last){e.preventDefault();first.focus();}}
   }
