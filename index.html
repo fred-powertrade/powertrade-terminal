@@ -2363,7 +2363,7 @@ function ptOrderbookUrl(sym, expiry, strike, optType){
   return `https://app.power.trade/trade/${sym}-${expiry}-${strike}-${optType}`;
 }
 function ptTradeUrl(sym){
-  return `https://app.power.trade/trade/${sym}`;
+  return `https://power.trade/en/trade/spot/${sym}-USD`;
 }
 
 const SIGNAL_EXPLANATIONS = {
@@ -5292,7 +5292,7 @@ function renderLiteTradeIdeas(){
           </div>`).join('')}
         </div>
         <!-- Trade link -->
-        <a class="sig-trade-link" href="https://powertrade.com/trade/${idea.asset.toLowerCase()}" target="_blank" style="display:flex;align-items:center;gap:6px;text-decoration:none">
+        <a class="sig-trade-link" href="https://power.trade/en/trade/spot/${idea.asset}-USD" target="_blank" style="display:flex;align-items:center;gap:6px;text-decoration:none">
           <span class="pt-arrow">&#9654;</span> Trade ${idea.asset} options on PowerTrade
         </a>
       </div>
