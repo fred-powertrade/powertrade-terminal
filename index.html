@@ -988,18 +988,20 @@ function renderKPIRow(){
   const eth=D.find(t=>t.s==='ETH')||{};
   const totalMCap=D.reduce((s,t)=>s+(t.mc||0),0);
   const total24Vol=D.reduce((s,t)=>s+(t.vol||0),0);
-  const portfolioVal=100000;
+  const savedPortVal=parseFloat(localStorage.getItem('pt_portfolio_val')||'0')||0;
   const btcChg=btc.chg24h||0;
   const avgChg=D.slice(0,10).reduce((s,t)=>s+(t.chg24h||0),0)/10;
   const marginUsed=42.7;
   const fmtK=v=>{if(v>=1e12)return'$'+(v/1e12).toFixed(2)+'T';if(v>=1e9)return'$'+(v/1e9).toFixed(1)+'B';if(v>=1e6)return'$'+(v/1e6).toFixed(1)+'M';return'$'+v.toLocaleString()};
   const clr=v=>v>=0?'var(--green)':'var(--red)';
   const sign=v=>v>=0?'+':'';
+  const portDisplay=savedPortVal>0?'$'+savedPortVal.toLocaleString():'—';
+  const portPnL=savedPortVal>0?`${sign(avgChg)}${avgChg.toFixed(2)}% · ${sign(avgChg)}$${Math.abs(savedPortVal*avgChg/100).toLocaleString(undefined,{maximumFractionDigits:0})} est.`:'Enter size to model P&L';
   el.innerHTML=`
-    <div class="kpi-card">
-      <div class="kpi-label">Portfolio Value</div>
-      <div class="kpi-value" style="color:var(--t1)">$${portfolioVal.toLocaleString()}</div>
-      <div class="kpi-change" style="color:${clr(avgChg)}">${sign(avgChg)}${avgChg.toFixed(2)}% (24h)</div>
+    <div class="kpi-card" style="cursor:pointer;position:relative" title="Click to set portfolio size" onclick="editPortfolioVal()">
+      <div class="kpi-label">Portfolio Size <span style="font-size:8px;color:var(--cyan);opacity:.7">✎ edit</span></div>
+      <div class="kpi-value" id="kpi-port-val" style="color:${savedPortVal>0?'var(--t1)':'var(--t4)'}">${portDisplay}</div>
+      <div class="kpi-change" style="color:${savedPortVal>0?clr(avgChg):'var(--t4)'}">${portPnL}</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">BTC Price</div>
@@ -1026,6 +1028,17 @@ function renderKPIRow(){
       <div class="kpi-value" style="color:${marginUsed>60?'var(--red)':marginUsed>40?'var(--amber)':'var(--green)'}">${marginUsed.toFixed(1)}%</div>
       <div class="kpi-sub">of available</div>
     </div>`;
+}
+
+function editPortfolioVal(){
+  const cur=parseFloat(localStorage.getItem('pt_portfolio_val')||'0')||'';
+  const raw=window.prompt('Enter your portfolio size in USD (used to model P&L in stress tests and signals):', cur||'');
+  if(raw===null)return;
+  const val=parseFloat(raw.replace(/[,$]/g,''));
+  if(isNaN(val)||val<0){showToast('Invalid value — enter a number e.g. 50000',true);return;}
+  localStorage.setItem('pt_portfolio_val',val||'0');
+  renderKPIRow();
+  if(val>0)showToast('Portfolio size set to $'+val.toLocaleString(),false);
 }
 
 // ═══ MODE STATE ═══════════════════════════════════════════════
@@ -2360,7 +2373,7 @@ function pickSignalExpiry(type){
   return SIGNAL_EXPIRIES[2];
 }
 function ptOrderbookUrl(sym, expiry, strike, optType){
-  return `https://app.power.trade/trade/${sym}-${expiry}-${strike}-${optType}`;
+  return `https://power.trade/en/trade/options/${sym}/`;
 }
 function ptTradeUrl(sym){
   return `https://power.trade/en/trade/spot/${sym}-USD`;
@@ -2531,7 +2544,7 @@ function runAlphaScanner(){
         desc:`Funding at ${(t.fund*100).toFixed(3)}% (extremely negative) with rising social mentions — squeeze probability elevated.`,
         confidence:squeezeConf,color:'var(--amber)',
         metrics:[
-          {l:'Funding',v:(t.fund*100).toFixed(3)+'%',c:'var(--red)'},
+          {l:'Funding',v:(t.fund*100).toFixed(3)+'%',c:'var(--violet)'},
           {l:'Social',v:sentDelta.toFixed(2)+'x',c:'var(--green)'},
           {l:'OI',v:fmt(t.oi),c:'var(--cyan)'}
         ],
@@ -2597,7 +2610,8 @@ function calcStressTest(scenarioId,customPct){
   const scenario=STRESS_SCENARIOS.find(s=>s.id===scenarioId)||STRESS_SCENARIOS[0];
   const spotDrop=customPct!=null?customPct:scenario.spotDrop;
   const ivMultiplier=1+(Math.abs(spotDrop)/scenario.spotDrop*scenario.ivSpike/100)||1.5;
-  const results={assets:[],totalPnL:0,portfolioValue:100000,scenario};
+  const savedPV=parseFloat(localStorage.getItem('pt_portfolio_val')||'0')||100000;
+  const results={assets:[],totalPnL:0,portfolioValue:savedPV,scenario};
 
   for(const[sym,weight]of Object.entries(STRESS_PORTFOLIO)){
     const t=D.find(d=>d.s===sym);if(!t)continue;
@@ -3042,7 +3056,7 @@ function buildSpotPanels(){
           <input type="range" id="stress-slider" min="-80" max="0" value="-30" step="1" oninput="updateStressTest()"/>
           <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--t4);margin-top:2px"><span>-80%</span><span>0%</span></div>
         </div>
-        <div class="card-h" style="border-top:1px solid var(--border)"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Portfolio Impact — $100K Reference</div></div>
+        <div class="card-h" style="border-top:1px solid var(--border)"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Portfolio Impact</div></div>
         <div class="stress-portfolio" id="stress-portfolio"></div>
         <div class="stress-total" id="stress-total"></div>
       </div>
@@ -3293,7 +3307,7 @@ function buildOptionsPanels(){
           <input type="range" id="stress-slider" min="-80" max="0" value="-30" step="1" oninput="updateStressTest()"/>
           <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--t4);margin-top:2px"><span>-80%</span><span>0%</span></div>
         </div>
-        <div class="card-h" style="border-top:1px solid var(--border)"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Portfolio Impact — $100K Reference</div></div>
+        <div class="card-h" style="border-top:1px solid var(--border)"><div class="card-t"><span class="dot" style="background:var(--violet)"></span>Portfolio Impact</div></div>
         <div class="stress-portfolio" id="stress-portfolio"></div>
         <div class="stress-total" id="stress-total"></div>
       </div>
@@ -3443,6 +3457,62 @@ function buildOptionsPanels(){
   <div class="tab-panel" id="panel-xstocks">${buildXStocksPanel()}</div>`;
 }
 
+const EARNINGS_CALENDAR=[
+  // Earnings — approximate Q1 2026 dates
+  {date:'2026-03-11',sym:'ORCL',event:'Oracle Q3 Earnings',type:'earnings',impact:'high'},
+  {date:'2026-03-13',sym:'ADBE',event:'Adobe Q1 Earnings',type:'earnings',impact:'high'},
+  {date:'2026-03-18',sym:'MU',event:'Micron Q2 Earnings',type:'earnings',impact:'medium'},
+  {date:'2026-03-25',sym:'NKE',event:'Nike Q3 Earnings',type:'earnings',impact:'medium'},
+  // Macro events
+  {date:'2026-03-12',sym:'MACRO',event:'US CPI Report (Feb)',type:'macro',impact:'high'},
+  {date:'2026-03-18',sym:'MACRO',event:'FOMC Rate Decision',type:'macro',impact:'high'},
+  {date:'2026-03-19',sym:'MACRO',event:'Fed Press Conference',type:'macro',impact:'high'},
+  {date:'2026-03-28',sym:'MACRO',event:'PCE Inflation (Feb)',type:'macro',impact:'high'},
+  {date:'2026-04-02',sym:'MACRO',event:'US Jobs Report (Mar)',type:'macro',impact:'high'},
+  {date:'2026-04-09',sym:'MACRO',event:'US CPI Report (Mar)',type:'macro',impact:'high'},
+  // Big Tech Q1 earnings (late Apr)
+  {date:'2026-04-22',sym:'TSLA',event:'Tesla Q1 Earnings',type:'earnings',impact:'high'},
+  {date:'2026-04-23',sym:'META',event:'Meta Q1 Earnings',type:'earnings',impact:'high'},
+  {date:'2026-04-28',sym:'AAPL',event:'Apple Q2 Earnings',type:'earnings',impact:'high'},
+  {date:'2026-04-28',sym:'AMZN',event:'Amazon Q1 Earnings',type:'earnings',impact:'high'},
+  {date:'2026-04-29',sym:'MSFT',event:'Microsoft Q3 Earnings',type:'earnings',impact:'high'},
+  {date:'2026-05-07',sym:'NVDA',event:'Nvidia Q1 Earnings',type:'earnings',impact:'high'},
+  // Options expiries
+  {date:'2026-03-21',sym:'OPEX',event:'March OPEX (Quad Witching)',type:'opex',impact:'medium'},
+  {date:'2026-04-17',sym:'OPEX',event:'April Monthly OPEX',type:'opex',impact:'medium'},
+  {date:'2026-05-15',sym:'OPEX',event:'May Monthly OPEX',type:'opex',impact:'medium'},
+];
+
+function buildEarningsCalendar(){
+  const now=new Date();
+  const upcoming=EARNINGS_CALENDAR
+    .filter(e=>new Date(e.date)>=new Date(now.toDateString()))
+    .sort((a,b)=>a.date.localeCompare(b.date))
+    .slice(0,12);
+  const typeColor={earnings:'var(--cyan)',macro:'var(--amber)',opex:'var(--violet)'};
+  const typeBadge={earnings:'b-cyan',macro:'b-amber',opex:'b-violet'};
+  const impactDot={high:'var(--red)',medium:'var(--amber)',low:'var(--green)'};
+  const fmtDate=d=>{const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});};
+  const daysUntil=d=>{const ms=new Date(d+'T00:00:00')-new Date(now.toDateString());return Math.ceil(ms/86400000);};
+  return`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
+    ${upcoming.map(e=>{
+      const days=daysUntil(e.date);
+      const urgent=days<=5;
+      return`<div style="background:var(--bg2);border:1px solid ${urgent?typeColor[e.type]:' var(--border)'};border-radius:7px;padding:10px 12px;position:relative">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:9px;font-weight:800;color:${typeColor[e.type]};text-transform:uppercase;letter-spacing:.06em">${fmtDate(e.date)}</span>
+          <span class="badge ${typeBadge[e.type]}" style="font-size:7px">${e.type.toUpperCase()}</span>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--t1);margin-bottom:2px">${e.sym !== 'MACRO' && e.sym !== 'OPEX' ? e.sym+' — ' : ''}${e.event}</div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:4px">
+          <span style="width:6px;height:6px;border-radius:50%;background:${impactDot[e.impact]};display:inline-block;flex-shrink:0"></span>
+          <span style="font-size:9px;color:var(--t3)">${e.impact.toUpperCase()} IMPACT · ${days===0?'TODAY':days===1?'TOMORROW':days+' days'}</span>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
 function buildXStocksPanel(){
   const btc=D.find(t=>t.s==='BTC')||{};
   const eth=D.find(t=>t.s==='ETH')||{};
@@ -3541,6 +3611,10 @@ function buildXStocksPanel(){
               </div>
             </div>
           </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div class="xstocks-section-title" style="margin-bottom:10px">&#128197; Key Dates Calendar — Earnings &amp; Macro Events</div>
+          <div id="xstocks-calendar-body">${buildEarningsCalendar()}</div>
         </div>
         <div class="xstocks-why-box">
           <div class="why-title">&#128274; Why Trade xStock Options on PowerTrade — The Only Venue That Matters</div>
@@ -3855,7 +3929,7 @@ function renderFunding(id="fund-body"){
   const tokens=[...D].filter(t=>t.mc>500e6).sort((a,b)=>Math.abs(b.fund)-Math.abs(a.fund)).slice(0,16);
   el.innerHTML=tokens.map(t=>{
     const isPos=t.fund>=0;const pct=Math.abs(t.fund)/.065;
-    const c=Math.abs(t.fund)>0.03?"var(--red)":Math.abs(t.fund)>0.01?"var(--amber)":"var(--green)";
+    const c=t.fund>0.03?"var(--red)":t.fund>0.01?"var(--amber)":t.fund<-0.03?"var(--violet)":t.fund<-0.01?"var(--cyan)":"var(--green)";
     // Phase 1: Funding bars are clickable — clicking opens deep dive for that token
     return`<div class="fb" role="button" tabindex="0" aria-label="View ${t.s} deep dive"
       style="cursor:pointer" onclick="selectAsset('${t.s}')"
@@ -4441,7 +4515,7 @@ function renderTable(){
       <td class="num-mono ${cCls(chg)}" style="font-weight:700">${fP(chg)}</td>
       <td class="num-mono" style="color:var(--t3);font-size:10px">${fmt(t.vol)}</td>
       <td class="num-mono" style="color:var(--t3);font-size:10px">${fmt(t.mc)}</td>
-      <td class="num-mono" style="color:${Math.abs(t.fund)>.03?"var(--red)":"var(--green)"};font-size:10px">${t.fund>=0?"+":""}${(t.fund*100).toFixed(3)}%</td>
+      <td class="num-mono" style="color:${t.fund>.03?"var(--red)":t.fund>.01?"var(--amber)":t.fund<-.03?"var(--violet)":t.fund<-.01?"var(--cyan)":"var(--green)"};font-size:10px">${t.fund>=0?"+":""}${(t.fund*100).toFixed(3)}%</td>
       <td class="num-mono" style="font-weight:700;color:${t.conviction>=80?"var(--green)":t.conviction>=55?"var(--amber)":"var(--cyan)"}">${t.conviction}</td>
     </tr>`;
   }).join('');
@@ -4638,13 +4712,7 @@ function closeDetailPanel() {
  * @param {Object} params  Optional: { expiry, strike, optType }
  */
 function openOrderbook(symbol, params = {}) {
-  const base = 'https://powertrade.example/order';
-  const qp = new URLSearchParams({ symbol });
-  if (params.expiry)  qp.set('expiry', params.expiry);
-  if (params.strike)  qp.set('strike', params.strike);
-  if (params.optType) qp.set('type', params.optType);
-  const url = `${base}?${qp.toString()}`;
-  console.log('[openOrderbook]', { symbol, params, url });
+  const url = `https://power.trade/en/trade/options/${symbol}/`;
   window.open(url, '_blank', 'noopener');
   showToast(`Opening orderbook for ${symbol}${params.strike ? ' $'+params.strike : ''} ${params.optType || ''}`, false);
 }
@@ -4655,8 +4723,11 @@ function openOrderbook(symbol, params = {}) {
  * @param {Object} params
  */
 function placeMarketOrder(symbol, params = {}) {
-  console.log('[placeMarketOrder]', { symbol, params });
-  showToast(`Market order triggered: ${symbol}${params.strike ? ' $'+params.strike : ''} ${params.optType || ''} — connect exchange API to execute`, false);
+  const url = params.side
+    ? `https://power.trade/en/trade/spot/${symbol}-USD`
+    : `https://power.trade/en/trade/options/${symbol}/`;
+  window.open(url, '_blank', 'noopener');
+  showToast(`Opening trade page for ${symbol}${params.strike ? ' $'+params.strike : ''} ${params.optType || ''}`, false);
 }
 
 // ═══ FORMULA EXPLAIN MODAL ══════════════════════════════════════
