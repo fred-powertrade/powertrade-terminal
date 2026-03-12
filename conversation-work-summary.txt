@@ -1,0 +1,187 @@
+================================================================================
+POWERTRADE TERMINAL — WORK SUMMARY
+Repository: fred-powertrade/powertrade-terminal
+Generated: 2026-03-12
+================================================================================
+
+PROJECT OVERVIEW
+----------------
+Built and iteratively improved the PowerTrade Risk Terminal — a single-page
+crypto options/derivatives dashboard (index.html + powertrade-terminal-v7.html)
+with live market data, options analytics, and beginner LITE mode.
+
+FILES
+-----
+- index.html                    Main dashboard (~352KB)
+- powertrade-terminal-v7.html   v7 variant (~272KB)
+- README.md                     Minimal readme
+
+================================================================================
+GIT HISTORY — ALL COMMITS
+================================================================================
+
+HASH     | DATE       | DESCRIPTION
+---------|------------|----------------------------------------------------------
+f063306  | 2026-03-08 | Merge PR #17 (update-visual-language)
+678a26f  | 2026-03-08 | Merge PR #16 — deep-dive modal, alpha intelligence, accessibility
+19c02bf  | 2026-03-08 | feat: 5-phase UX/interactivity overhaul for Risk Terminal v7
+3247f09  | 2026-03-07 | Merge PR #15 (update-visual-language)
+ac8bb89  | 2026-03-07 | feat(lite): port Trade Ideas tab to v7
+56eb991  | 2026-03-07 | feat(lite): add Trade Ideas tab with beginner options education
+1820aba  | 2026-03-07 | Merge PR #14 — 9 dashboard upgrades
+32c95ea  | 2026-03-07 | Implement 9 dashboard upgrades (status bar, safeFetch, Plotly, etc.)
+1695b19  | 2026-03-06 | Delete powertrade-terminal-v5.html
+8f93c84  | 2026-03-06 | Merge PR #13 (update-visual-language)
+14f074c  | 2026-03-06 | Port LITE mode, tooltips, Deep-Dive modal to index.html and v5.html
+cc964ab  | 2026-03-06 | Merge PR #12 (update-visual-language)
+0af486a  | 2026-03-06 | Merge PR #11 from main
+63f02eb  | 2026-03-06 | Add LITE mode, contextual tooltips, Deep-Dive modal, historical comparison
+a65a908  | 2026-03-06 | Refactor v7 to strict PowerTrade Visual Language compliance
+d4f7ed4  | 2026-03-06 | Merge PR #10 (update-visual-language)
+6509060  | 2026-03-06 | Update visual language to PowerTrade design system
+af7241a  | 2026-03-06 | Merge PR #9 (live-dashboard-api)
+bdade04  | 2026-03-06 | Add orderbook links, signal explanations, expiry dates, tab tooltips
+a0221a7  | 2026-03-06 | Add Supabase-powered news feed with real-time updates, filters, trends & alerts
+b89dd61  | 2026-03-04 | Merge PR #8 (live-dashboard-api)
+8d7fd10  | 2026-03-04 | Merge branch live-dashboard-api
+425588e  | 2026-03-04 | restyle: Rebrand to official PowerTrade color scheme and typography
+9cd81e3  | 2026-02-27 | Merge branch main
+5baef35  | 2026-02-27 | Merge PR #7 (live-dashboard-api)
+b4f4407  | 2026-02-27 | remove: Delete Plans/Pricing tab from all dashboard modes
+e57891f  | 2026-02-27 | feat: Light/Dark theme toggle, modern typography, Bloomberg-style xStocks module
+fb1ef84  | 2026-02-27 | Merge PR #6 (live-dashboard-api)
+3ed71dd  | 2026-02-27 | sync: Copy index.html to powertrade-terminal-v5.html
+f9e6e81  | 2026-02-27 | sync: Copy index.html to powertrade-terminal-v7.html
+73b4b86  | 2026-02-27 | Merge PR #5 (live-dashboard-api)
+72ddf3b  | 2026-02-27 | Merge branch main
+50a6627  | 2026-02-27 | Merge branch live-dashboard-api
+ec2e0e3  | 2026-02-27 | feat: Predictive Sentiment Delta Map, Alpha Scanner, Stress Test Calculator
+3106de6  | 2026-02-26 | feat: Add PowerTrade v7 terminal with live data & Google Trends wordmap
+70abcab  | 2026-02-26 | Remove login screen styles from index.html
+3931bc9  | 2026-02-26 | Merge PR #4 (live-dashboard-api)
+1ab4edf  | 2026-02-26 | feat: KAITO institutional crypto terminal — login gate, spot/options modes
+bc8ec87  | 2026-02-26 | Merge PR #3 (live-dashboard-api)
+8a82b3c  | 2026-02-26 | Add index.html for GitHub Pages deployment
+
+================================================================================
+MAJOR FEATURES BUILT
+================================================================================
+
+1. INITIAL DASHBOARD (2026-02-26)
+   - Institutional crypto terminal with login gate
+   - Spot/Options dual-mode views
+   - Live market data integration
+   - GitHub Pages deployment setup
+
+2. LIVE DATA & V7 TERMINAL (2026-02-26–27)
+   - PowerTrade v7 terminal with live API data
+   - Google Trends wordmap integration
+   - Predictive Sentiment Delta Map
+   - Alpha Scanner module
+   - Stress Test Calculator
+   - Light/Dark theme toggle
+   - Bloomberg-style xStocks Research module
+   - Removed Plans/Pricing tab
+
+3. POWERTRADE BRANDING (2026-03-04)
+   - Full rebrand to official PowerTrade color scheme
+   - Typography and visual identity overhaul
+
+4. NEWS FEED & SIGNALS (2026-03-06)
+   - Supabase-powered real-time news feed
+   - News filters, trends & alerts
+   - PowerTrade orderbook deep links
+   - Signal explanations with expiry dates
+   - Tab tooltips
+
+5. VISUAL LANGUAGE COMPLIANCE (2026-03-06)
+   - Strict PowerTrade Visual Language refactor for v7
+   - Design system tokens applied throughout
+
+6. LITE MODE (2026-03-06–07)
+   - Beginner-friendly LITE mode overlay
+   - Contextual tooltips on all metrics
+   - Deep-Dive modal for per-asset analysis
+   - Historical metric comparison charts
+   - Trade Ideas tab with options education:
+     * Options 101 explainer (calls, puts, key terms)
+     * Auto-generated trade ideas from live data signals:
+       - Buy Put  → high IV + downtrend
+       - Buy Call → low IV + uptrend
+       - Straddle → high IV + flat price
+       - Bull Call Spread → moderate IV + positive GEX
+     * Each idea: plain-English explanation, "Why Now", "How to Trade"
+
+7. 9 DASHBOARD UPGRADES (2026-03-07)
+   - Connection status bar with live/stale/error states
+   - safeFetch() wrapper with timeout & error handling
+   - Plotly.js charts replacing static tables
+   - Explain modals with sample size & precision %
+   - Trade action buttons (Market Buy/Sell stubs)
+   - Alerts manager for price/IV/funding thresholds
+   - sessionStorage caching for Supabase queries
+   - Client-side telemetry (tab views, signal clicks)
+   - CSS micro-improvements
+
+8. 5-PHASE UX OVERHAUL (2026-03-08)
+   Phase 1 — Interactivity & Discoverability:
+   - Treemap tiles: Plotly click handler + keyboard (Enter/Space) support
+   - Flow feed items: clickable → selectAsset()
+   - Funding bar rows: clickable → selectAsset()
+   - Header BTC/ETH stats: onclick + onkeydown
+   - Bubble chart: canvas click hit-detection with radius test
+
+   Phase 2 — Side Detail Panel:
+   - openDetailPanel(sym): token name/price/change, KPI grid, quick-action buttons
+   - closeDetailPanel(): removes .open class, smooth scroll
+
+   Phase 3 — Enriched Deep-Dive Modal:
+   - LightweightCharts candlestick price chart (30-day synthetic OHLCV)
+   - Alpha Intelligence Summary: plain-English narrative from Funding/RSI/IVRank/GEX
+   - Actionable Playbook: LONG/SHORT bias, entry trigger, 1σ stop, 2σ target
+   - Position sizing guidance via calcExpectedMove()
+   - Quick Trade Actions footer: Market Buy/Sell, Open Orderbook
+
+   Phase 4 — Explainability & Trust:
+   - Explain modal: Sample Size (N) + Precision % columns
+   - Confidence banner (green/red) based on precision < 50% or N < 20
+   - ESTIMATED/LIVE data-source tags on chart sections
+   - ℹ Explain buttons on Fair Value Consensus and IV Rank
+
+   Phase 5 — Performance & Memory:
+   - Plotly.purge() before newPlot to prevent memory leaks
+   - Focus trap in deep-dive modal (Tab/Shift+Tab wrapping)
+   - Focus returned to opener element on modal close
+
+9. ACCESSIBILITY & DEEP-DIVE ENHANCEMENTS (2026-03-08)
+   - ARIA labels and roles on interactive elements
+   - Keyboard navigation throughout
+   - Deep-Dive modal accessibility improvements
+
+================================================================================
+CURRENT BRANCH
+================================================================================
+claude/add-conversation-download-xfrSS
+
+================================================================================
+PULL REQUESTS MERGED
+================================================================================
+PR #17 — update-visual-language (2026-03-08)
+PR #16 — frontend overhaul: deep-dive, alpha intelligence, accessibility (2026-03-08)
+PR #15 — update-visual-language (2026-03-07)
+PR #14 — 9 dashboard upgrades (2026-03-07)
+PR #13 — update-visual-language (2026-03-06)
+PR #12 — update-visual-language (2026-03-06)
+PR #11 — from main (2026-03-06)
+PR #10 — update-visual-language (2026-03-06)
+PR #9  — live-dashboard-api (2026-03-06)
+PR #8  — live-dashboard-api (2026-03-04)
+PR #7  — live-dashboard-api (2026-02-27)
+PR #6  — live-dashboard-api (2026-02-27)
+PR #5  — live-dashboard-api (2026-02-27)
+PR #4  — live-dashboard-api (2026-02-26)
+PR #3  — live-dashboard-api (2026-02-26)
+
+================================================================================
+END OF SUMMARY
+================================================================================
